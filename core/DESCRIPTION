@@ -1,0 +1,15 @@
+Package: omixcore
+Title: Shared Utilities for OMIX Modules
+Version: 0.0.1
+Authors@R: person("OMIX", "Team", role = c("aut", "cre"), email = "TODO@example.org")
+Description: Shared validation and manifest helpers used by OMIX module capsules.
+License: file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports:
+    utils
+Suggests:
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+

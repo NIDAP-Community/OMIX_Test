@@ -1,0 +1,13 @@
+name: heatmap
+display_name: Heatmap Capsule
+module_type: visualization
+starter_environment: r-visualization
+owner: TODO
+description: Heatmap module.
+entrypoint: code/run.R
+inputs_schema: schemas/inputs.schema.json
+outputs_schema: schemas/outputs.schema.json
+capsule:
+  image: ghcr.io/your-org/omix-heatmap:latest
+  base_image: ghcr.io/your-org/omix-r-visualization:latest
+

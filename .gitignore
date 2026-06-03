@@ -1,0 +1,37 @@
+# macOS
+.DS_Store
+
+# R
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+renv/library/
+renv/python/
+renv/staging/
+
+# Build and test output
+*.log
+*.tmp
+test_output/
+output/
+results/
+artifacts/
+
+# Data and large generated files
+data/
+*.rds
+*.RDS
+*.csv
+*.tsv
+*.xlsx
+*.pdf
+*.html
+*.png
+*.jpg
+*.jpeg
+
+# Containers
+*.sif
+*.tar
+

@@ -1,0 +1,13 @@
+name: venn_diagram
+display_name: Venn Diagram Capsule
+module_type: visualization
+starter_environment: r-visualization
+owner: TODO
+description: Venn diagram module.
+entrypoint: code/run.R
+inputs_schema: schemas/inputs.schema.json
+outputs_schema: schemas/outputs.schema.json
+capsule:
+  image: ghcr.io/your-org/omix-venn-diagram:latest
+  base_image: ghcr.io/your-org/omix-r-visualization:latest
+

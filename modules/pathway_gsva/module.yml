@@ -1,0 +1,13 @@
+name: pathway_gsva
+display_name: GSVA Capsule
+module_type: pathway
+starter_environment: r-pathway
+owner: TODO
+description: GSVA pathway module.
+entrypoint: code/run.R
+inputs_schema: schemas/inputs.schema.json
+outputs_schema: schemas/outputs.schema.json
+capsule:
+  image: ghcr.io/your-org/omix-pathway-gsva:latest
+  base_image: ghcr.io/your-org/omix-r-pathway:latest
+
