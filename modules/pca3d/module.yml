@@ -8,6 +8,6 @@ entrypoint: code/run.R
 inputs_schema: schemas/inputs.schema.json
 outputs_schema: schemas/outputs.schema.json
 capsule:
-  image: ghcr.io/your-org/omix-pca3d:latest
-  base_image: ghcr.io/your-org/omix-r-visualization:latest
+  image: ghcr.io/nidap-community/omix-pca3d:latest
+  base_image: ghcr.io/nidap-community/omix-r-visualization:latest
 

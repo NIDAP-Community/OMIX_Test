@@ -11,6 +11,6 @@ Example modules:
 Intended image:
 
 ```text
-ghcr.io/your-org/omix-r-pathway:latest
+ghcr.io/nidap-community/omix-r-pathway:latest
 ```
 

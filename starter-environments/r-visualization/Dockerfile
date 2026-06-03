@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=ghcr.io/your-org/omix-r-base:latest
+ARG BASE_IMAGE=ghcr.io/nidap-community/omix-r-base:latest
 FROM ${BASE_IMAGE}
 
 LABEL org.opencontainers.image.title="OMIX r-visualization starter"

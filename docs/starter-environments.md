@@ -16,8 +16,8 @@ They should contain packages that are common across a group of modules, but not 
 The CI templates assume this image naming pattern:
 
 ```text
-ghcr.io/your-org/omix-<starter-environment>:latest
+ghcr.io/nidap-community/omix-<starter-environment>:latest
 ```
 
-Replace `your-org` with the owning GitHub organization before enabling pushes.
+This scaffold is configured for the `nidap-community` GHCR namespace.
 
