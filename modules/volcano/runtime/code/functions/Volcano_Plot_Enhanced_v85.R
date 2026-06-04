@@ -107,6 +107,15 @@
 #' @param resolution_dpi_ Numeric. Default: \code{300}.
 #' @param output_file_path Character or \code{NULL}. Optional output path for
 #' volcano figure(s). If multiple contrasts are provided, suffixes are added.
+#' @param color_not_significant Character. Color for points that are not
+#' significant (bottom-center quadrant). Default: \code{"gray"}.
+#' @param color_fold_change_only Character. Color for points with fold change
+#' only (left and right quadrants). Default: \code{"orange"}.
+#' @param color_significant_only Character. Color for points with significance
+#' only (top-center quadrant). Default: \code{"green4"}.
+#' @param color_significant_and_fold_change Character. Color for points with
+#' both significance and fold change (top-left and top-right quadrants).
+#' Default: \code{"red3"}.
 #'
 #' @return A data frame of DEG results used to generate the volcano plot,
 #' including fold change, p-value, significance category, and label columns.
@@ -147,7 +156,11 @@ volcano_plot_enhanced <- function(
   image_width = 3000,
   image_height = 3000,
   resolution_dpi_ = 300,
-  output_file_path = NULL
+  output_file_path = NULL,
+  color_not_significant = "gray",
+  color_fold_change_only = "orange",
+  color_significant_only = "green4",
+  color_significant_and_fold_change = "red3"
 ) {
   library(dplyr)
   library(ggplot2)
@@ -539,10 +552,10 @@ volcano_plot_enhanced <- function(
       ) +
       scale_color_manual(
         values = c(
-          "Not significant" = "grey70",
-          "Fold change only" = "#F4A261",
-          "Significant only" = "#2A9D8F",
-          "Significant and fold change" = "#D62828"
+          "Not significant" = color_not_significant,
+          "Fold change only" = color_fold_change_only,
+          "Significant only" = color_significant_only,
+          "Significant and fold change" = color_significant_and_fold_change
         )
       ) +
       coord_cartesian(
