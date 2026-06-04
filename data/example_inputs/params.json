@@ -1,0 +1,38 @@
+{
+  "run_label": "l2p_single_example",
+  "inputs": {
+    "deg_table_file": "data/example_inputs/deg_table.csv"
+  },
+  "function_args": {
+    "function_name": "l2p_single",
+    "deg_table": "deg_results",
+    "gene_name_column": "Gene",
+    "column_used_to_rank_genes": "A-C_tstat",
+    "significance_column": "A-C_adjpval",
+    "fold_change_column": "A-C_logFC",
+    "species": "Mouse",
+    "collections_to_include": ["GO", "REACTOME", "KEGG"],
+    "select_by_rank": true,
+    "select_top_percentage_of_genes": true,
+    "select_top_genes": 500,
+    "significance_threshold": 0.05,
+    "fold_change_threshold": 1.2,
+    "minimum_number_of_deg_genes": 3,
+    "number_of_pathways_to_plot": 12,
+    "pathway_axis_label_max_length": 50,
+    "plot_top_pathways_up": true,
+    "pathways_to_use_up": [],
+    "plot_top_pathways_down": true,
+    "pathways_to_use_down": [],
+    "sort_bubble_plot_by": "percent gene hits per pathway",
+    "plot_bubble_size": "number of hits",
+    "plot_bubble_color": "Fisher's Exact pval",
+    "bubble_colors": "blues",
+    "pathway_axis_label_font_size": 15,
+    "use_fdr_p_values": false,
+    "color_for_bar": "GreentoBlue",
+    "use_built_in_gene_universe": false,
+    "minimum_pathway_hit_count": 1,
+    "p_value_threshold_for_output": 0.05
+  }
+}
