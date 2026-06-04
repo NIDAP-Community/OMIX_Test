@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added explicit Volcano runtime dependency installation for Code Ocean builds.
 - Added platform-ready runtime bundle for `volcano`.
 - Added platform-ready runtime bundles for `pathway_l2p_single` and `pathway_l2p_multi`.
 - Added guarded sync documentation and tooling for isolated L2P runtime development.
