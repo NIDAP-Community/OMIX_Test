@@ -70,6 +70,9 @@ resolve_path <- function(path) {
   if (is_absolute_path(path)) {
     return(path)
   }
+  if (file.exists(path)) {
+    return(normalizePath(path, mustWork = TRUE))
+  }
   file.path(runtime_root, path)
 }
 
@@ -88,6 +91,30 @@ require_jsonlite <- function() {
   }
 }
 
+require_runtime_packages <- function() {
+  packages <- c("dplyr", "tidyr", "ggplot2", "ggrepel", "stringr")
+  missing_packages <- packages[!vapply(packages, requireNamespace, logical(1), quietly = TRUE)]
+  if (length(missing_packages) > 0) {
+    stop(
+      "Missing required R package(s): ",
+      paste(missing_packages, collapse = ", "),
+      ". Run environment/postInstall.sh or rebuild the Code Ocean environment.",
+      call. = FALSE
+    )
+  }
+}
+
+remove_default_rplots <- function() {
+  default_rplots <- unique(c(
+    file.path(getwd(), "Rplots.pdf"),
+    file.path(runtime_root, "Rplots.pdf"),
+    file.path(runtime_root, "code", "Rplots.pdf")
+  ))
+  for (path in default_rplots[file.exists(default_rplots)]) {
+    file.remove(path)
+  }
+}
+
 opts <- parse_args(commandArgs(TRUE))
 if (opts$help) {
   usage()
@@ -95,6 +122,7 @@ if (opts$help) {
 }
 
 require_jsonlite()
+require_runtime_packages()
 
 params_path <- opts$params
 if (is.null(params_path)) {
@@ -172,6 +200,7 @@ if (opts$dry_run) {
 }
 
 result <- do.call(entry_function, function_args)
+remove_default_rplots()
 jsonlite::write_json(
   list(
     module = module_name,
