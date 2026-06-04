@@ -1,13 +1,17 @@
 name: volcano
-display_name: Volcano Capsule
+display_name: Volcano
 module_type: visualization
 starter_environment: r-visualization
 owner: TODO
 description: Volcano plot module.
-entrypoint: code/run.R
+entrypoint: runtime/run.sh
 inputs_schema: schemas/inputs.schema.json
 outputs_schema: schemas/outputs.schema.json
-capsule:
+runtime_root: runtime
+source_template: Volcano_Plot_Enhanced_v85.R
+template_version: 85
+data_policy: External execution platforms provide production inputs; repository stores docs and tiny examples only.
+sync_policy: Bidirectional sync is limited to modules/volcano/runtime via branch and PR.
+deployment:
   image: ghcr.io/nidap-community/omix-volcano:latest
   base_image: ghcr.io/nidap-community/omix-r-visualization:latest
-

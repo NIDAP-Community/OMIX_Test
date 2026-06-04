@@ -8,6 +8,7 @@ Usage:
   scripts/code_ocean_sync.sh reverse MODULE CODE_OCEAN_ROOT [--apply] [--branch]
 
 MODULE must be one of:
+  volcano
   pathway_l2p_single
   pathway_l2p_multi
 
@@ -47,7 +48,7 @@ for option in "${@:4}"; do
 done
 
 case "${module}" in
-  pathway_l2p_single|pathway_l2p_multi)
+  volcano|pathway_l2p_single|pathway_l2p_multi)
     ;;
   *)
     echo "Unsupported module: ${module}" >&2
