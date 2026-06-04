@@ -62,6 +62,133 @@ For L2P Multi, replace `pathway_l2p_single` with `pathway_l2p_multi` and run the
 
 The `--branch` option refuses to run if the worktree is dirty. This keeps a Code Ocean-side fix from mixing with unrelated local edits.
 
+## Final Working Workflow: Code Ocean To OMIX Main
+
+Use this workflow when both the module capsule and the full OMIX sync capsule live in Code Ocean.
+
+The setup uses two Code Ocean capsules:
+
+```text
+Capsule A: OMIX Volcano Plot
+  Branch: co/volcano
+  Purpose: edit, test, and run the isolated Volcano module
+
+Capsule B: OMIX_Test sync capsule
+  Branch: main
+  Purpose: hold the full OMIX monorepo and reverse-sync Code Ocean edits
+```
+
+Keep these persistent GitHub branches:
+
+```text
+main        # OMIX monorepo source of truth
+co/volcano  # isolated Code Ocean export branch for the Volcano capsule
+```
+
+Do not merge `co/volcano` directly into `main`.
+
+### 1. Edit And Push From The Volcano Capsule
+
+In Capsule A, make and test the Volcano change. Then commit only intended module files:
+
+```bash
+cd ~/capsule
+git status --short
+git add code/functions/Volcano_Plot_Enhanced_v85.R data/example_inputs/params.json README.md
+git commit -m "Volcano edits from Code Ocean"
+git push origin co/volcano
+```
+
+Adjust the `git add` command to include only the files actually changed. Do not add `.codeocean/`, `metadata/`, generated `results/**`, or production data.
+
+### 2. Start A Safe Sync Branch In The Full OMIX Capsule
+
+In Capsule B, update `main` and create a temporary monorepo-shaped sync branch:
+
+```bash
+cd ~/capsule
+git switch main
+git pull origin main
+
+SYNC_BRANCH="co-sync/volcano-$(date +%Y%m%d-%H%M%S)"
+git switch -c "$SYNC_BRANCH"
+```
+
+### 3. Clone The Updated Volcano Export Branch Into Scratch
+
+```bash
+rm -rf /scratch/omix-co-volcano
+git clone --branch co/volcano --single-branch \
+  https://github.com/NIDAP-Community/OMIX_Test.git \
+  /scratch/omix-co-volcano
+```
+
+### 4. Reverse-Sync Into The Monorepo Module Path
+
+```bash
+scripts/code_ocean_sync.sh reverse volcano /scratch/omix-co-volcano --apply
+```
+
+If the sync capsule does not have `rsync`, this message is expected with the portable fallback:
+
+```text
+rsync not found; using portable copy fallback.
+```
+
+### 5. Review And Test
+
+Confirm that only Volcano module files changed:
+
+```bash
+git diff --name-only
+```
+
+Expected paths should be under:
+
+```text
+modules/volcano/runtime/
+```
+
+Run the repo contract test and the Volcano smoke test:
+
+```bash
+Rscript tests/test-module-contract.R
+modules/volcano/runtime/tests/test_run_small.sh
+```
+
+### 6. Commit And Push The Sync Branch
+
+Stage only the Volcano runtime path:
+
+```bash
+git add modules/volcano/runtime
+git commit -m "Sync Volcano edits from Code Ocean"
+git push origin "$SYNC_BRANCH"
+```
+
+### 7. Open The Pull Request
+
+Open a GitHub pull request from:
+
+```text
+$SYNC_BRANCH -> main
+```
+
+Use squash-and-merge for a single logical sync commit. A suitable merge commit message is:
+
+```text
+Sync Volcano edits from Code Ocean
+```
+
+After the PR merges, update `main` in Capsule B or locally:
+
+```bash
+git switch main
+git pull origin main
+```
+
+The persistent `co/volcano` branch should remain because the Volcano capsule uses it. Temporary `co-sync/volcano-*` branches can be deleted after merge.
+
 ## Worked Example: Volcano Code Ocean Edit Back To Main
 
 This is the safe path for a change made in the Code Ocean Volcano capsule.
