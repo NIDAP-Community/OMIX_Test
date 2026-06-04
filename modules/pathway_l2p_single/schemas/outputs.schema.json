@@ -1,7 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "pathway_l2p inputs",
+  "title": "pathway_l2p_single outputs",
   "type": "object",
   "additionalProperties": true
 }
-

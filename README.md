@@ -21,7 +21,7 @@ OMIX_Test/
 | --- | --- | --- |
 | `r-base` | Base R, renv, common system libraries | shared utility modules |
 | `r-visualization` | Plotting and visualization packages | volcano, heatmap, PCA, Venn, tSNE/UMAP, limma stats |
-| `r-pathway` | Pathway and gene-set packages | GSVA, GSEA, L2P |
+| `r-pathway` | Pathway and gene-set packages | GSVA, GSEA, L2P single, L2P multi |
 | `r-singlecell` | Single-cell packages | future single-cell modules |
 
 Starter environments are intended to be built once, cached in GHCR, and referenced by module capsule builds.
@@ -41,7 +41,8 @@ Current starter modules:
 - `stats_limma`
 - `pathway_gsva`
 - `pathway_gsea`
-- `pathway_l2p`
+- `pathway_l2p_single`
+- `pathway_l2p_multi`
 
 ## Module Contract
 
@@ -76,4 +77,3 @@ Rscript tests/test-module-contract.R
 3. CI validates the module contract and reports changed modules.
 4. Module-specific build/test jobs can build only the changed capsule.
 5. Starter environments rebuild only when files under `starter-environments/` change.
-

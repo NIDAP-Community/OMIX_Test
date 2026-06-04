@@ -1,0 +1,12 @@
+name: pathway_l2p_multi
+display_name: L2P Multi Capsule
+module_type: pathway
+starter_environment: r-pathway
+owner: TODO
+description: L2P pathway module for multi-comparison analysis.
+entrypoint: code/run.R
+inputs_schema: schemas/inputs.schema.json
+outputs_schema: schemas/outputs.schema.json
+capsule:
+  image: ghcr.io/nidap-community/omix-pathway-l2p-multi:latest
+  base_image: ghcr.io/nidap-community/omix-r-pathway:latest
