@@ -1,0 +1,37 @@
+# OMIX L2P Multi
+
+Runtime bundle for L2P pathway enrichment across multiple differential-expression comparisons.
+
+This runtime is sourced from `L2P_Multi_v93.R` and runs the `l2p_multi()` function. Production inputs should be mounted by the target execution platform. The repository includes only tiny example inputs for dry-run validation.
+
+## Inputs
+
+- Parameters JSON: `/data/params.json` or `--params PATH`
+- DEG table CSV: `/data/deg_table.csv`, `--deg-table PATH`, or `inputs.deg_table_file` in the parameters JSON
+
+The DEG table must include:
+
+- gene name column
+- one or more rank/statistic columns
+- matching significance columns
+- matching fold-change columns
+
+## Outputs
+
+Files are written to `/results` in Code Ocean, or `results/` when run locally.
+
+- `l2p_multi_results.csv`
+- `l2p_multi_plot.png`
+- `run_manifest.json`
+
+## Run
+
+```bash
+./run.sh --params /data/params.json --deg-table /data/deg_table.csv
+```
+
+For layout and parameter validation without running the full L2P dependency stack:
+
+```bash
+./run.sh --dry-run
+```

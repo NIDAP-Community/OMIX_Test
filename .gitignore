@@ -31,7 +31,14 @@ data/
 *.jpg
 *.jpeg
 
+# Runtime scaffolds intentionally track docs and tiny examples.
+!modules/*/runtime/data/
+!modules/*/runtime/data/README.md
+!modules/*/runtime/data/example_inputs/
+!modules/*/runtime/data/example_inputs/**
+!modules/*/runtime/results/
+!modules/*/runtime/results/README.md
+
 # Containers
 *.sif
 *.tar
-

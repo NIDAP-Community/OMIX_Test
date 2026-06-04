@@ -1,6 +1,6 @@
 # Starter Environments
 
-Shared container layers used by OMIX module capsules.
+Shared container layers used by OMIX module runtimes.
 
 Each folder contains:
 
@@ -9,4 +9,3 @@ Each folder contains:
 - `README.md`
 
 These environments are intentionally broader than one module, but narrower than the whole repository.
-

@@ -1,12 +1,17 @@
 name: pathway_l2p_multi
-display_name: L2P Multi Capsule
+display_name: L2P Multi
 module_type: pathway
 starter_environment: r-pathway
 owner: TODO
 description: L2P pathway module for multi-comparison analysis.
-entrypoint: code/run.R
+entrypoint: runtime/run.sh
 inputs_schema: schemas/inputs.schema.json
 outputs_schema: schemas/outputs.schema.json
-capsule:
+runtime_root: runtime
+source_template: L2P_Multi_v93.R
+template_version: 93
+data_policy: External execution platforms provide production inputs; repository stores docs and tiny examples only.
+sync_policy: Bidirectional sync is limited to modules/pathway_l2p_multi/runtime via branch and PR.
+deployment:
   image: ghcr.io/nidap-community/omix-pathway-l2p-multi:latest
   base_image: ghcr.io/nidap-community/omix-r-pathway:latest

@@ -8,7 +8,7 @@ Required folders:
 - `tests/` for module-local tests.
 - `schemas/` for input and output schemas.
 - `app-panel/` for Code Ocean app-panel configuration.
-- `code/` for capsule entrypoints and execution scripts.
+- `code/` for module entrypoints and execution scripts.
 
 Required files:
 
@@ -30,8 +30,9 @@ Optional but recommended fields:
 - `description`
 - `inputs_schema`
 - `outputs_schema`
-- `capsule.image`
-- `capsule.base_image`
+- `runtime_root`
+- `deployment.image`
+- `deployment.base_image`
 
 Supported starter environments in this scaffold:
 
@@ -39,4 +40,3 @@ Supported starter environments in this scaffold:
 - `r-visualization`
 - `r-pathway`
 - `r-singlecell`
-
