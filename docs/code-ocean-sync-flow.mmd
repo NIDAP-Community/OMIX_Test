@@ -1,0 +1,84 @@
+flowchart LR
+  %% OMIX monorepo to Code Ocean isolated runtime export, then back through PR review.
+
+  subgraph GHMain["GitHub: OMIX_Test main branch"]
+    MainRepo["OMIX monorepo source of truth"]
+    VolcanoModule["modules/volcano/runtime"]
+    OtherModules["Other OMIX modules and shared docs"]
+    StarterEnv["starter-environments/r-visualization"]
+    MainRepo --> VolcanoModule
+    MainRepo --> OtherModules
+    MainRepo --> StarterEnv
+  end
+
+  subgraph Outbound["Outbound export"]
+    OutboundScript["scripts/code_ocean_sync.sh outbound volcano"]
+    ExportBoundary["Copy only one runtime root"]
+    ExportBoundaryDetails["Include: README, run.sh, code, docs, tests, tiny examples, environment\nExclude: other modules, production data, generated results, .codeocean metadata"]
+    OutboundScript --> ExportBoundary
+    ExportBoundary --> ExportBoundaryDetails
+  end
+
+  subgraph COBranch["GitHub export branch: co/volcano"]
+    ExportBranch["Code Ocean shaped repository root"]
+    ExportRoot["README.md\nrun.sh\ncode/\ndata/\ndocs/\nenvironment/\nresults/README.md"]
+    ExportBranch --> ExportRoot
+  end
+
+  subgraph CodeOcean["Code Ocean: OMIX Volcano Plot"]
+    CloneBranch["Clone or pull branch co/volcano"]
+    BuildEnv["Build environment from environment/Dockerfile\nor run environment/postInstall.sh"]
+    AppBuilder["Configure App Builder parameters"]
+    RunTest["Run and test Volcano plot"]
+    COEdit["Edit module code or docs in Code Ocean"]
+    COPush["Commit and push to origin co/volcano"]
+    CloneBranch --> BuildEnv --> AppBuilder --> RunTest --> COEdit --> COPush
+  end
+
+  subgraph Reverse["Reverse sync back to monorepo"]
+    PullExport["Local export checkout pulls origin co/volcano"]
+    SyncBranch["Create monorepo branch\nco-sync/volcano-demo"]
+    ReverseScript["scripts/code_ocean_sync.sh reverse volcano /path/to/export --apply"]
+    PathMap["Map Code Ocean root back to modules/volcano/runtime"]
+    ReviewDiff["Review diff: only modules/volcano/runtime should change"]
+    Tests["Run tests\nRscript tests/test-module-contract.R\nmodules/volcano/runtime/tests/test_run_small.sh"]
+    CommitSync["Commit and push co-sync/volcano-demo"]
+    PullExport --> SyncBranch --> ReverseScript --> PathMap --> ReviewDiff --> Tests --> CommitSync
+  end
+
+  subgraph PR["GitHub PR review"]
+    SafePR["Open PR: co-sync/volcano-demo to main"]
+    ChangedFiles["Expected changed files live under modules/volcano/runtime"]
+    MergeMain["Squash and merge into main"]
+    SafePR --> ChangedFiles --> MergeMain
+  end
+
+  MainRepo --> OutboundScript
+  ExportBoundary --> ExportBranch
+  ExportBranch --> CloneBranch
+  COPush --> ExportBranch
+  ExportBranch --> PullExport
+  CommitSync --> SafePR
+  MergeMain --> MainRepo
+
+  BadDirectMerge["Do not PR or pull co/volcano directly into main\nThe branch layouts are different and can overwrite the monorepo shape"]
+  ExportBranch -. unsafe .-> BadDirectMerge
+  BadDirectMerge -. blocked by process .-> MainRepo
+
+  Guardrails["Guardrails\n- Each CO export maps to exactly one OMIX module\n- Stage only modules/volcano/runtime for the sync commit\n- Keep co/volcano as the persistent CO export branch\n- Delete temporary co-sync branches after merge\n- Keep production data and generated results out of GitHub"]
+  ReviewDiff --> Guardrails
+  Guardrails --> SafePR
+
+  classDef source fill:#e8f3ff,stroke:#2b6cb0,stroke-width:2px,color:#111827;
+  classDef export fill:#fff7e6,stroke:#c77900,stroke-width:2px,color:#111827;
+  classDef codeocean fill:#eef8f0,stroke:#2f855a,stroke-width:2px,color:#111827;
+  classDef reverse fill:#f3edff,stroke:#6b46c1,stroke-width:2px,color:#111827;
+  classDef danger fill:#ffe8e8,stroke:#c53030,stroke-width:2px,color:#111827;
+  classDef guard fill:#f7fafc,stroke:#4a5568,stroke-width:2px,color:#111827;
+
+  class MainRepo,VolcanoModule,OtherModules,StarterEnv source;
+  class OutboundScript,ExportBoundary,ExportBoundaryDetails,ExportBranch,ExportRoot export;
+  class CloneBranch,BuildEnv,AppBuilder,RunTest,COEdit,COPush codeocean;
+  class PullExport,SyncBranch,ReverseScript,PathMap,ReviewDiff,Tests,CommitSync,SafePR,ChangedFiles,MergeMain reverse;
+  class BadDirectMerge danger;
+  class Guardrails guard;

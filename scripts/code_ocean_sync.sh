@@ -106,8 +106,96 @@ reverse_filters=(
   --exclude "data/**"
 )
 
+skip_common_path() {
+  local rel_path="$1"
+  local base_name
+  base_name="$(basename "${rel_path}")"
+
+  case "${rel_path}" in
+    .git|.git/*|.codeocean|.codeocean/*)
+      return 0
+      ;;
+  esac
+
+  case "${base_name}" in
+    .DS_Store|.Rhistory|.RData|Rplots.pdf)
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
+allow_reverse_path() {
+  local rel_path="$1"
+
+  case "${rel_path}" in
+    results/README.md)
+      return 0
+      ;;
+    results/*)
+      return 1
+      ;;
+    data/README.md|data/example_inputs/*)
+      return 0
+      ;;
+    data/*)
+      return 1
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+}
+
+portable_copy() {
+  local src_root="$1"
+  local dest_root="$2"
+  local copy_mode="$3"
+
+  echo "rsync not found; using portable copy fallback." >&2
+  (
+    cd "${src_root}"
+    while IFS= read -r -d '' src_file; do
+      local rel_path
+      rel_path="${src_file#./}"
+
+      if skip_common_path "${rel_path}"; then
+        continue
+      fi
+
+      if [[ "${copy_mode}" == "reverse" ]] && ! allow_reverse_path "${rel_path}"; then
+        continue
+      fi
+
+      if [[ "${apply}" != "--apply" ]]; then
+        echo "${rel_path}"
+      else
+        mkdir -p "${dest_root}/$(dirname "${rel_path}")"
+        cp -p "${rel_path}" "${dest_root}/${rel_path}"
+      fi
+    done < <(find . -type f -print0)
+  )
+}
+
+sync_tree() {
+  local copy_mode="$1"
+  local src_root="$2"
+  local dest_root="$3"
+
+  if [[ "${OMIX_SYNC_DISABLE_RSYNC:-}" != "1" ]] && command -v rsync >/dev/null 2>&1; then
+    if [[ "${copy_mode}" == "outbound" ]]; then
+      rsync "${rsync_flags[@]}" "${common_excludes[@]}" "${src_root}/" "${dest_root}/"
+    else
+      rsync "${rsync_flags[@]}" "${common_excludes[@]}" "${reverse_filters[@]}" "${src_root}/" "${dest_root}/"
+    fi
+  else
+    portable_copy "${src_root}" "${dest_root}" "${copy_mode}"
+  fi
+}
+
 if [[ "${mode}" == "outbound" ]]; then
-  rsync "${rsync_flags[@]}" "${common_excludes[@]}" "${module_runtime}/" "${co_root}/"
+  sync_tree outbound "${module_runtime}" "${co_root}"
 else
   branch_name="co-sync/${module}/$(date +%Y%m%d-%H%M%S)"
   echo "Reverse sync target: modules/${module}/runtime" >&2
@@ -125,5 +213,5 @@ else
   else
     echo "Recommended branch before applying: ${branch_name}" >&2
   fi
-  rsync "${rsync_flags[@]}" "${common_excludes[@]}" "${reverse_filters[@]}" "${co_root}/" "${module_runtime}/"
+  sync_tree reverse "${co_root}" "${module_runtime}"
 fi
