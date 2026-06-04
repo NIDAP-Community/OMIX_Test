@@ -1,0 +1,39 @@
+{
+  "run_label": "l2p_multi_example",
+  "inputs": {
+    "deg_table_file": "data/example_inputs/deg_table.csv"
+  },
+  "function_args": {
+    "function_name": "l2p_multi",
+    "deg_table": "deg_results",
+    "gene_names_column": "Gene",
+    "t_statistic_columns": ["A-B_tstat", "A-C_tstat", "B-C_tstat"],
+    "significance_columns": ["A-B_adjpval", "A-C_adjpval", "B-C_adjpval"],
+    "fold_change_columns": ["A-B_logFC", "A-C_logFC", "B-C_logFC"],
+    "species": "Mouse",
+    "update_genes": true,
+    "collections_to_include": ["H"],
+    "select_by_rank": true,
+    "top_pathways": 10,
+    "number_of_significant_events": 1,
+    "select_top_percentage_of_genes": true,
+    "select_top_genes": 500,
+    "significance_threshold": 0.05,
+    "fold_change_threshold": 1.2,
+    "plot_bubble_size": "pval",
+    "plot_bubble_color": "enrichment_score",
+    "plot_bubble_max_color": 1,
+    "pathway_axis_label_max_length": 100,
+    "pathway_axis_label_font_size": 5,
+    "use_built_in_gene_universe": false,
+    "minimum_pathway_hit_count": 1,
+    "pathway_size_limit": 500,
+    "p_value_limit": 0.05,
+    "use_fdr_for_significance": false,
+    "pathways_to_remove": [],
+    "rename_groups": [],
+    "vertical_line_placement": [],
+    "use_panel_plot": false,
+    "use_dynamic_pathway_font_size": true
+  }
+}
