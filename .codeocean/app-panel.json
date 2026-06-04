@@ -1,0 +1,26 @@
+{
+	"version": 1,
+	"named_parameters": true,
+	"parameters": [
+		{
+			"id": "2WgPs7QPJgoKILwW",
+			"name": "Parameters JSON",
+			"param_name": "params",
+			"description": "Parameters for Volcano Plot",
+			"help_text": "JSON file containing the Volcano Plot run settings. Use the example file for dry-run testing, or provide a parameters JSON that matches the schema in `docs/input_schema.md`.\n",
+			"type": "file",
+			"default_value": "../data/example_inputs/params.json",
+			"required": true
+		},
+		{
+			"id": "ujcvfKBPZWMMc3mz",
+			"name": "DEG table CSV",
+			"param_name": "deg-table",
+			"description": "Differential expression table",
+			"help_text": "CSV file containing differential expression results. For Volcano Plot, it must include the gene name, significance, and fold-change columns named in the parameters JSON.",
+			"type": "file",
+			"default_value": "../data/example_inputs/deg_table.csv",
+			"required": true
+		}
+	]
+}
