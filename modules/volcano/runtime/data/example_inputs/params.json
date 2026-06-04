@@ -7,7 +7,7 @@
     "function_name": "volcano_plot_enhanced",
     "deg_table": "deg_results",
     "column_with_feature_id": "Gene",
-    "significance_column": ["A-B_adjpval", "A-C_adjpval", "B-C_adjpval"],
+    "significance_column": ["A-B_pval", "A-C_pval", "B-C_pval"],
     "log2_fold_change_column": ["A-B_logFC", "A-C_logFC", "B-C_logFC"],
     "p_value_threshold": 0.05,
     "log2_fold_change_threshold": 1,
@@ -33,6 +33,10 @@
     "point_size": 2,
     "image_width": 1800,
     "image_height": 1800,
-    "resolution_dpi_": 150
+    "resolution_dpi_": 150,
+    "color_not_significant": "gray",
+    "color_fold_change_only": "orange",
+    "color_significant_only": "green4",
+    "color_significant_and_fold_change": "red3"
   }
 }
