@@ -33,6 +33,10 @@
     "point_size": 2,
     "image_width": 1800,
     "image_height": 1800,
-    "resolution_dpi_": 150
+    "resolution_dpi_": 150,
+    "color_not_significant": "gray",
+    "color_fold_change_only": "orange",
+    "color_significant_only": "green4",
+    "color_significant_and_fold_change": "red3"
   }
 }
