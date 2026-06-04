@@ -46,16 +46,20 @@ Current starter modules:
 
 The first platform-ready runtime examples are:
 
+- `modules/volcano/runtime/`
 - `modules/pathway_l2p_single/runtime/`
 - `modules/pathway_l2p_multi/runtime/`
 
-All other modules are placeholders until these L2P examples are validated in Code Ocean.
+All other modules are placeholders until these first examples are validated in Code Ocean.
 
 ## Code Ocean Sync
 
-Each L2P runtime bundle can be sparse-synced into a standalone Code Ocean root. The OMIX monorepo remains the source of truth, and reverse sync is guarded so Code Ocean-side edits return only to the matching module runtime directory.
+Each runtime bundle can be sparse-synced into a standalone Code Ocean root. The OMIX monorepo remains the source of truth, and reverse sync is guarded so Code Ocean-side edits return only to the matching module runtime directory.
 
-See `docs/code-ocean-sync.md`.
+See:
+
+- `docs/code-ocean-sync.md` for the step-by-step sync workflow
+- `docs/code-ocean-sync-flow.mmd` for the Mermaid/Lucidchart diagram
 
 ## Module Contract
 
