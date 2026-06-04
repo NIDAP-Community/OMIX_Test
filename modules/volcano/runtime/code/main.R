@@ -104,6 +104,17 @@ require_runtime_packages <- function() {
   }
 }
 
+remove_default_rplots <- function() {
+  default_rplots <- unique(c(
+    file.path(getwd(), "Rplots.pdf"),
+    file.path(runtime_root, "Rplots.pdf"),
+    file.path(runtime_root, "code", "Rplots.pdf")
+  ))
+  for (path in default_rplots[file.exists(default_rplots)]) {
+    file.remove(path)
+  }
+}
+
 opts <- parse_args(commandArgs(TRUE))
 if (opts$help) {
   usage()
@@ -189,6 +200,7 @@ if (opts$dry_run) {
 }
 
 result <- do.call(entry_function, function_args)
+remove_default_rplots()
 jsonlite::write_json(
   list(
     module = module_name,

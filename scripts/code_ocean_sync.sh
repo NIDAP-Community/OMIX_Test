@@ -92,6 +92,7 @@ common_excludes=(
   --exclude ".DS_Store"
   --exclude ".Rhistory"
   --exclude ".RData"
+  --exclude "Rplots.pdf"
 )
 
 reverse_filters=(
