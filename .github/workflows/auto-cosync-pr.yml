@@ -1,0 +1,228 @@
+name: Auto Co-Sync PR
+
+on:
+  push:
+    branches:
+      - 'co/**'
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  create-cosync-pr:
+    name: Create co-sync PR for [sync] commits
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check commit message for [sync] trigger
+        id: trigger
+        shell: bash
+        run: |
+          msg="${{ github.event.head_commit.message }}"
+          echo "Commit message: ${msg}"
+          if echo "${msg}" | grep -qiF '[sync]'; then
+            echo "triggered=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "triggered=false" >> "${GITHUB_OUTPUT}"
+            echo "No [sync] tag found; skipping co-sync PR creation."
+          fi
+
+      - name: Extract module name from branch
+        if: steps.trigger.outputs.triggered == 'true'
+        id: parse
+        shell: bash
+        run: |
+          branch="${{ github.ref_name }}"
+          module="${branch#co/}"
+          echo "module=${module}" >> "${GITHUB_OUTPUT}"
+          echo "Detected module: ${module}"
+
+      - name: Check for already-open co-sync PRs
+        if: steps.trigger.outputs.triggered == 'true'
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          open_prs="$(gh pr list \
+            --repo "${REPO}" \
+            --base main \
+            --state open \
+            --json number,headRefName \
+            --jq '[.[] | select(.headRefName | startswith("co-sync/"))]')"
+
+          count="$(echo "${open_prs}" | jq 'length')"
+          {
+            echo "open_prs<<EOF"
+            echo "${open_prs}"
+            echo "EOF"
+            echo "count=${count}"
+          } >> "${GITHUB_OUTPUT}"
+
+          echo "Found ${count} open co-sync PR(s)."
+
+      - name: Abort if co-sync PR already open
+        if: steps.trigger.outputs.triggered == 'true' && steps.check.outputs.count != '0'
+        env:
+          OPEN_PRS: ${{ steps.check.outputs.open_prs }}
+          REPO: ${{ github.repository }}
+          MODULE: ${{ steps.parse.outputs.module }}
+        shell: bash
+        run: |
+          links="$(echo "${OPEN_PRS}" | jq -r \
+            --arg repo "${REPO}" \
+            '.[] | "- #\(.number) (`\(.headRefName)`) — https://github.com/\($repo)/pull/\(.number)"')"
+
+          echo "::error::Cannot create co-sync PR for '${MODULE}' because another co-sync PR is already open. Merge or close it first, then re-push with [sync]."
+          echo "${links}"
+          exit 1
+
+      - name: Check out repository
+        if: steps.trigger.outputs.triggered == 'true' && steps.check.outputs.count == '0'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run reverse sync and create co-sync branch
+        if: steps.trigger.outputs.triggered == 'true' && steps.check.outputs.count == '0'
+        id: sync
+        env:
+          MODULE: ${{ steps.parse.outputs.module }}
+          CO_BRANCH: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          timestamp="$(date +%Y%m%d-%H%M%S)"
+          sync_branch="co-sync/${MODULE}-${timestamp}"
+          echo "sync_branch=${sync_branch}" >> "${GITHUB_OUTPUT}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main "${CO_BRANCH}"
+          git checkout -b "${sync_branch}" origin/main
+          git worktree add /tmp/co-export "origin/${CO_BRANCH}"
+
+          echo "Reverse sync dry-run:"
+          bash scripts/code_ocean_sync.sh reverse "${MODULE}" /tmp/co-export
+
+          bash scripts/code_ocean_sync.sh reverse "${MODULE}" /tmp/co-export --apply
+
+          changed_paths="$(
+            {
+              git diff --name-only
+              git ls-files --others --exclude-standard
+            } | sort -u
+          )"
+
+          if [ -z "${changed_paths}" ]; then
+            echo "nothing_to_commit=true" >> "${GITHUB_OUTPUT}"
+            echo "No changes detected after sync."
+            git worktree remove /tmp/co-export
+            exit 0
+          fi
+
+          echo "Changed paths after sync:"
+          echo "${changed_paths}"
+
+          out_of_scope="$(echo "${changed_paths}" | grep -v "^modules/${MODULE}/runtime/" || true)"
+          if [ -n "${out_of_scope}" ]; then
+            echo "::error::Reverse sync touched paths outside modules/${MODULE}/runtime. Aborting."
+            echo "${out_of_scope}"
+            git worktree remove /tmp/co-export
+            exit 1
+          fi
+
+          git add "modules/${MODULE}/runtime"
+
+          if git diff --cached --quiet; then
+            echo "nothing_to_commit=true" >> "${GITHUB_OUTPUT}"
+            echo "No staged changes detected after sync."
+          else
+            echo "nothing_to_commit=false" >> "${GITHUB_OUTPUT}"
+            git commit -m "Sync ${MODULE} edits from Code Ocean [auto]"
+            git push origin "${sync_branch}"
+          fi
+
+          git worktree remove /tmp/co-export
+
+      - name: Skip if nothing changed
+        if: >
+          steps.trigger.outputs.triggered == 'true' &&
+          steps.check.outputs.count == '0' &&
+          steps.sync.outputs.nothing_to_commit == 'true'
+        run: |
+          echo "No file changes found after reverse sync. No PR will be created."
+          echo "This can happen if the [sync] commit only touched filtered files such as .codeocean/, metadata/, results/, or production data."
+
+      - name: Ensure co-sync label exists
+        if: >
+          steps.trigger.outputs.triggered == 'true' &&
+          steps.check.outputs.count == '0' &&
+          steps.sync.outputs.nothing_to_commit == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          gh label create co-sync \
+            --repo "${REPO}" \
+            --color "6f42c1" \
+            --description "Automated Code Ocean reverse-sync PR" \
+            --force
+
+      - name: Open draft PR to main
+        if: >
+          steps.trigger.outputs.triggered == 'true' &&
+          steps.check.outputs.count == '0' &&
+          steps.sync.outputs.nothing_to_commit == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          MODULE: ${{ steps.parse.outputs.module }}
+          SYNC_BRANCH: ${{ steps.sync.outputs.sync_branch }}
+          CO_BRANCH: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          COMMITTER: ${{ github.event.head_commit.author.name }}
+        shell: bash
+        run: |
+          main_sha="$(git rev-parse origin/main)"
+
+          pr_body="$(cat <<BODY
+          ## Automated Co-Sync: \`${MODULE}\`
+
+          This draft PR was created automatically by a \`[sync]\` commit on \`${CO_BRANCH}\`.
+
+          | | |
+          |---|---|
+          | **Module** | \`${MODULE}\` |
+          | **Source branch** | \`${CO_BRANCH}\` |
+          | **Triggered by** | ${COMMITTER} |
+          | **CO commit** | \`${COMMIT_SHA:0:7}\` |
+          | **CO commit message** | ${COMMIT_MSG} |
+          | **main SHA at sync time** | \`${main_sha:0:7}\` |
+
+          ### Before merging
+          - [ ] Confirm all changed files are under \`modules/${MODULE}/runtime/\`
+          - [ ] Contract tests pass: \`Rscript tests/test-module-contract.R\`
+          - [ ] Smoke test passes if available: \`modules/${MODULE}/runtime/tests/test_run_small.sh\`
+          - [ ] No generated \`results/**\` files are included, except \`results/README.md\`
+          - [ ] No production data files are included
+
+          Use **squash-and-merge** for a single logical sync commit.
+          After merge, delete this branch. The persistent \`${CO_BRANCH}\` branch should remain.
+          BODY
+          )"
+
+          gh pr create \
+            --repo "${REPO}" \
+            --base main \
+            --head "${SYNC_BRANCH}" \
+            --title "Sync ${MODULE} edits from Code Ocean" \
+            --body "${pr_body}" \
+            --draft \
+            --label "co-sync"

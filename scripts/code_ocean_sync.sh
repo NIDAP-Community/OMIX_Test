@@ -7,10 +7,7 @@ Usage:
   scripts/code_ocean_sync.sh outbound MODULE CODE_OCEAN_ROOT [--apply]
   scripts/code_ocean_sync.sh reverse MODULE CODE_OCEAN_ROOT [--apply] [--branch]
 
-MODULE must be one of:
-  volcano
-  pathway_l2p_single
-  pathway_l2p_multi
+MODULE must match an existing modules/<name>/runtime directory in the repo.
 
 Default mode is dry-run. Pass --apply to copy files.
 For reverse sync, pass --branch with --apply to create a review branch first.
@@ -47,16 +44,6 @@ for option in "${@:4}"; do
   esac
 done
 
-case "${module}" in
-  volcano|pathway_l2p_single|pathway_l2p_multi)
-    ;;
-  *)
-    echo "Unsupported module: ${module}" >&2
-    usage
-    exit 2
-    ;;
-esac
-
 case "${mode}" in
   outbound|reverse)
     ;;
@@ -71,8 +58,16 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 module_runtime="${repo_root}/modules/${module}/runtime"
 
 if [[ ! -d "${module_runtime}" ]]; then
-  echo "Missing module runtime directory: ${module_runtime}" >&2
-  exit 1
+  echo "Unsupported module: ${module}" >&2
+  echo "No runtime directory found at modules/${module}/runtime" >&2
+  echo "" >&2
+  echo "Available modules:" >&2
+  for dir in "${repo_root}/modules"/*/runtime; do
+    if [[ -d "${dir}" ]]; then
+      echo "  $(basename "$(dirname "${dir}")")" >&2
+    fi
+  done
+  exit 2
 fi
 
 if [[ ! -d "${co_root}" ]]; then
@@ -88,6 +83,7 @@ fi
 
 common_excludes=(
   --exclude ".git/"
+  --exclude ".github/"
   --exclude ".codeocean/"
   --exclude ".DS_Store"
   --exclude ".Rhistory"
@@ -112,7 +108,7 @@ skip_common_path() {
   base_name="$(basename "${rel_path}")"
 
   case "${rel_path}" in
-    .git|.git/*|.codeocean|.codeocean/*)
+    .git|.git/*|.github|.github/*|.codeocean|.codeocean/*)
       return 0
       ;;
   esac
@@ -194,11 +190,29 @@ sync_tree() {
   fi
 }
 
+copy_auto_workflow_to_export() {
+  local workflow_src="${repo_root}/.github/workflows/auto-cosync-pr.yml"
+  local workflow_dest="${co_root}/.github/workflows/auto-cosync-pr.yml"
+
+  if [[ ! -f "${workflow_src}" ]]; then
+    return 0
+  fi
+
+  if [[ "${apply}" != "--apply" ]]; then
+    echo ".github/workflows/auto-cosync-pr.yml"
+  else
+    mkdir -p "$(dirname "${workflow_dest}")"
+    cp -p "${workflow_src}" "${workflow_dest}"
+  fi
+}
+
 if [[ "${mode}" == "outbound" ]]; then
+  echo "Outbound sync: modules/${module}/runtime -> ${co_root}" >&2
   sync_tree outbound "${module_runtime}" "${co_root}"
+  copy_auto_workflow_to_export
 else
   branch_name="co-sync/${module}/$(date +%Y%m%d-%H%M%S)"
-  echo "Reverse sync target: modules/${module}/runtime" >&2
+  echo "Reverse sync: ${co_root} -> modules/${module}/runtime" >&2
   if [[ "${create_branch}" == "true" ]]; then
     if [[ "${apply}" != "--apply" ]]; then
       echo "Branch requested for dry-run. Branch would be: ${branch_name}" >&2
