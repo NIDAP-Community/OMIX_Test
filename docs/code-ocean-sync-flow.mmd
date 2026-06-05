@@ -1,84 +1,100 @@
 flowchart LR
-  %% OMIX monorepo to Code Ocean isolated runtime export, then back through PR review.
+  %% OMIX monorepo to Code Ocean isolated runtime export, then automated reverse sync by CI.
 
-  subgraph GHMain["GitHub: OMIX_Test main branch"]
-    MainRepo["OMIX monorepo source of truth"]
-    VolcanoModule["modules/volcano/runtime"]
-    OtherModules["Other OMIX modules and shared docs"]
-    StarterEnv["starter-environments/r-visualization"]
-    MainRepo --> VolcanoModule
-    MainRepo --> OtherModules
-    MainRepo --> StarterEnv
+  subgraph Main["GitHub: OMIX_Test main"]
+    Monorepo["OMIX monorepo\nsource of truth"]
+    ModuleRuntime["modules/<module>/runtime"]
+    OtherRepo["Other modules, core, docs,\nstarter-environments, tests"]
+    Monorepo --> ModuleRuntime
+    Monorepo --> OtherRepo
   end
 
-  subgraph Outbound["Outbound export"]
-    OutboundScript["scripts/code_ocean_sync.sh outbound volcano"]
-    ExportBoundary["Copy only one runtime root"]
-    ExportBoundaryDetails["Include: README, run.sh, code, docs, tests, tiny examples, environment\nExclude: other modules, production data, generated results, .codeocean metadata"]
-    OutboundScript --> ExportBoundary
-    ExportBoundary --> ExportBoundaryDetails
+  subgraph Export["Outbound export"]
+    OutboundScript["scripts/code_ocean_sync.sh\noutbound <module>"]
+    Boundary["Copy one runtime root only"]
+    BoundaryNotes["Include: code, docs, tests,\ntiny examples, environment\nExclude: other modules,\nproduction data, generated results"]
+    AutoWorkflowFile["Also copy\n.github/workflows/auto-cosync-pr.yml\ninto co/<module>"]
+    OutboundScript --> Boundary --> BoundaryNotes
+    OutboundScript --> AutoWorkflowFile
   end
 
-  subgraph COBranch["GitHub export branch: co/volcano"]
-    ExportBranch["Code Ocean shaped repository root"]
-    ExportRoot["README.md\nrun.sh\ncode/\ndata/\ndocs/\nenvironment/\nresults/README.md"]
-    ExportBranch --> ExportRoot
+  subgraph COBranch["GitHub persistent export branch"]
+    COExport["co/<module>\nexample: co/volcano"]
+    CORoot["Code Ocean root layout\nREADME.md\nrun.sh\ncode/\ndata/\ndocs/\nenvironment/\nresults/README.md"]
+    COExport --> CORoot
   end
 
-  subgraph CodeOcean["Code Ocean: OMIX Volcano Plot"]
-    CloneBranch["Clone or pull branch co/volcano"]
-    BuildEnv["Build environment from environment/Dockerfile\nor run environment/postInstall.sh"]
-    AppBuilder["Configure App Builder parameters"]
-    RunTest["Run and test Volcano plot"]
-    COEdit["Edit module code or docs in Code Ocean"]
-    COPush["Commit and push to origin co/volcano"]
-    CloneBranch --> BuildEnv --> AppBuilder --> RunTest --> COEdit --> COPush
+  subgraph CodeOcean["Code Ocean module capsule"]
+    PullExport["Clone or pull co/<module>"]
+    RunTest["Edit, build, and test capsule"]
+    CommitWIP["Commit without [sync]\nWIP only, no PR"]
+    CommitSync["Commit with [sync]\nready for monorepo review"]
+    PushCO["Push to origin co/<module>"]
+    PullExport --> RunTest
+    RunTest --> CommitWIP --> PushCO
+    RunTest --> CommitSync --> PushCO
   end
 
-  subgraph Reverse["Reverse sync back to monorepo"]
-    PullExport["Local export checkout pulls origin co/volcano"]
-    SyncBranch["Create monorepo branch\nco-sync/volcano-demo"]
-    ReverseScript["scripts/code_ocean_sync.sh reverse volcano /path/to/export --apply"]
-    PathMap["Map Code Ocean root back to modules/volcano/runtime"]
-    ReviewDiff["Review diff: only modules/volcano/runtime should change"]
-    Tests["Run tests\nRscript tests/test-module-contract.R\nmodules/volcano/runtime/tests/test_run_small.sh"]
-    CommitSync["Commit and push co-sync/volcano-demo"]
-    PullExport --> SyncBranch --> ReverseScript --> PathMap --> ReviewDiff --> Tests --> CommitSync
+  subgraph AutoPR["GitHub Actions: auto-cosync-pr.yml"]
+    Trigger["Push to co/<module>\nwith [sync]"]
+    CheckDuplicate["Abort if any co-sync/* PR\nis already open"]
+    FreshMain["Checkout fresh main"]
+    CreateBranch["Create co-sync/<module>-timestamp"]
+    Worktree["Checkout co/<module>\ninto scratch worktree"]
+    ReverseSync["Run reverse sync into\nmodules/<module>/runtime"]
+    ScopeCheck["Abort if changed paths fall\noutside modules/<module>/runtime"]
+    CommitBranch["Commit staged module runtime changes"]
+    OpenDraft["Open draft PR\nco-sync/<module>-* to main"]
+    Trigger --> CheckDuplicate --> FreshMain --> CreateBranch --> Worktree --> ReverseSync --> ScopeCheck --> CommitBranch --> OpenDraft
   end
 
-  subgraph PR["GitHub PR review"]
-    SafePR["Open PR: co-sync/volcano-demo to main"]
-    ChangedFiles["Expected changed files live under modules/volcano/runtime"]
-    MergeMain["Squash and merge into main"]
-    SafePR --> ChangedFiles --> MergeMain
+  subgraph DuplicateGuard["GitHub Actions: block-duplicate-cosync-pr.yml"]
+    NewPR["co-sync/* PR opened"]
+    CheckSiblings["Look for other open\nco-sync/* PRs to main"]
+    BlockMerge["Fail check and comment\nif another exists"]
+    CleanPass["Pass if none exist"]
+    NewPR --> CheckSiblings
+    CheckSiblings --> BlockMerge
+    CheckSiblings --> CleanPass
   end
 
-  MainRepo --> OutboundScript
-  ExportBoundary --> ExportBranch
-  ExportBranch --> CloneBranch
-  COPush --> ExportBranch
-  ExportBranch --> PullExport
-  CommitSync --> SafePR
-  MergeMain --> MainRepo
+  subgraph Review["Human review and merge"]
+    ReviewPR["Review draft PR"]
+    Verify["Confirm only\nmodules/<module>/runtime changed"]
+    Tests["Confirm contract and smoke tests"]
+    Squash["Squash and merge to main"]
+    DeleteTemp["Delete temporary co-sync branch"]
+    ReviewPR --> Verify --> Tests --> Squash --> DeleteTemp
+  end
 
-  BadDirectMerge["Do not PR or pull co/volcano directly into main\nThe branch layouts are different and can overwrite the monorepo shape"]
-  ExportBranch -. unsafe .-> BadDirectMerge
-  BadDirectMerge -. blocked by process .-> MainRepo
+  Monorepo --> OutboundScript
+  Boundary --> COExport
+  AutoWorkflowFile --> COExport
+  COExport --> PullExport
+  PushCO --> COExport
+  PushCO --> Trigger
+  OpenDraft --> NewPR
+  OpenDraft --> ReviewPR
+  Squash --> Monorepo
 
-  Guardrails["Guardrails\n- Each CO export maps to exactly one OMIX module\n- Stage only modules/volcano/runtime for the sync commit\n- Keep co/volcano as the persistent CO export branch\n- Delete temporary co-sync branches after merge\n- Keep production data and generated results out of GitHub"]
-  ReviewDiff --> Guardrails
-  Guardrails --> SafePR
+  BadDirect["Do not PR or merge co/<module>\ndirectly into main.\nThe branch layouts are different."]
+  COExport -. unsafe .-> BadDirect
+  BadDirect -. blocked by process .-> Monorepo
+
+  Guardrails["Guardrails\n- co/<module> is persistent\n- co-sync/* is temporary\n- only one co-sync PR open at a time\n- generated results excluded\n- production data excluded\n- .codeocean metadata excluded"]
+  ScopeCheck --> Guardrails
+  Guardrails --> ReviewPR
 
   classDef source fill:#e8f3ff,stroke:#2b6cb0,stroke-width:2px,color:#111827;
   classDef export fill:#fff7e6,stroke:#c77900,stroke-width:2px,color:#111827;
   classDef codeocean fill:#eef8f0,stroke:#2f855a,stroke-width:2px,color:#111827;
-  classDef reverse fill:#f3edff,stroke:#6b46c1,stroke-width:2px,color:#111827;
+  classDef action fill:#f3edff,stroke:#6b46c1,stroke-width:2px,color:#111827;
   classDef danger fill:#ffe8e8,stroke:#c53030,stroke-width:2px,color:#111827;
   classDef guard fill:#f7fafc,stroke:#4a5568,stroke-width:2px,color:#111827;
 
-  class MainRepo,VolcanoModule,OtherModules,StarterEnv source;
-  class OutboundScript,ExportBoundary,ExportBoundaryDetails,ExportBranch,ExportRoot export;
-  class CloneBranch,BuildEnv,AppBuilder,RunTest,COEdit,COPush codeocean;
-  class PullExport,SyncBranch,ReverseScript,PathMap,ReviewDiff,Tests,CommitSync,SafePR,ChangedFiles,MergeMain reverse;
-  class BadDirectMerge danger;
+  class Monorepo,ModuleRuntime,OtherRepo source;
+  class OutboundScript,Boundary,BoundaryNotes,AutoWorkflowFile,COExport,CORoot export;
+  class PullExport,RunTest,CommitWIP,CommitSync,PushCO codeocean;
+  class Trigger,CheckDuplicate,FreshMain,CreateBranch,Worktree,ReverseSync,ScopeCheck,CommitBranch,OpenDraft,NewPR,CheckSiblings,BlockMerge,CleanPass,ReviewPR,Verify,Tests,Squash,DeleteTemp action;
+  class BadDirect danger;
   class Guardrails guard;
