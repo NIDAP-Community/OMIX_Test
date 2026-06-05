@@ -1,9 +1,16 @@
 #!/usr/bin/env Rscript
 
-module_name <- "volcano"
-display_name <- "OMIX Volcano"
-source_template <- "Volcano_Plot_Enhanced_v85.R"
-entry_function <- "volcano_plot_enhanced"
+# OMIX Volcano - CLI-first volcano plot generator
+# Accepts parameters via command-line arguments from App Panel
+
+suppressPackageStartupMessages({
+  library(optparse)
+  library(dplyr)
+  library(tidyr)
+  library(ggplot2)
+  library(ggrepel)
+  library(stringr)
+})
 
 get_script_dir <- function() {
   file_arg <- commandArgs(FALSE)[grepl("^--file=", commandArgs(FALSE))]
@@ -15,207 +22,137 @@ get_script_dir <- function() {
 
 runtime_root <- normalizePath(file.path(get_script_dir(), ".."), mustWork = TRUE)
 
-usage <- function() {
-  cat(paste0(
-    display_name, "\n\n",
-    "Usage: run.sh [--params PATH] [--deg-table PATH] [--results-dir PATH] [--dry-run]\n\n",
-    "Defaults use Code Ocean-style mounted data when present:\n",
-    "  --params      /data/params.json, otherwise data/example_inputs/params.json\n",
-    "  --deg-table   /data/deg_table.csv, otherwise value in params JSON\n",
-    "  --results-dir /results, otherwise results/\n"
-  ))
-}
-
-parse_args <- function(args) {
-  opts <- list(help = FALSE, dry_run = FALSE)
-  i <- 1
-  while (i <= length(args)) {
-    arg <- args[i]
-    if (arg %in% c("-h", "--help")) {
-      opts$help <- TRUE
-    } else if (arg == "--dry-run") {
-      opts$dry_run <- TRUE
-    } else if (arg %in% c("--params", "--deg-table", "--deg_table", "--results-dir", "--results_dir")) {
-      if (i == length(args)) {
-        stop("Missing value for ", arg, call. = FALSE)
-      }
-      opts[[gsub("-", "_", sub("^--", "", arg))]] <- args[i + 1]
-      i <- i + 1
-    } else if (grepl("^--params=", arg)) {
-      opts$params <- sub("^--params=", "", arg)
-    } else if (grepl("^--deg-table=", arg)) {
-      opts$deg_table <- sub("^--deg-table=", "", arg)
-    } else if (grepl("^--deg_table=", arg)) {
-      opts$deg_table <- sub("^--deg_table=", "", arg)
-    } else if (grepl("^--results-dir=", arg)) {
-      opts$results_dir <- sub("^--results-dir=", "", arg)
-    } else if (grepl("^--results_dir=", arg)) {
-      opts$results_dir <- sub("^--results_dir=", "", arg)
-    } else {
-      stop("Unknown argument: ", arg, call. = FALSE)
-    }
-    i <- i + 1
-  }
-  opts
-}
-
-is_absolute_path <- function(path) {
-  grepl("^/", path) || grepl("^[A-Za-z]:[\\\\/]", path)
-}
-
-resolve_path <- function(path) {
-  if (is.null(path) || !nzchar(path)) {
-    return(path)
-  }
-  if (is_absolute_path(path)) {
-    return(path)
-  }
-  if (file.exists(path)) {
-    return(normalizePath(path, mustWork = TRUE))
-  }
-  file.path(runtime_root, path)
-}
-
-default_existing_path <- function(paths) {
-  for (path in paths) {
-    if (file.exists(path)) {
-      return(path)
-    }
-  }
-  paths[length(paths)]
-}
-
-require_jsonlite <- function() {
-  if (!requireNamespace("jsonlite", quietly = TRUE)) {
-    stop("The jsonlite R package is required.", call. = FALSE)
-  }
-}
-
-require_runtime_packages <- function() {
-  packages <- c("dplyr", "tidyr", "ggplot2", "ggrepel", "stringr")
-  missing_packages <- packages[!vapply(packages, requireNamespace, logical(1), quietly = TRUE)]
-  if (length(missing_packages) > 0) {
-    stop(
-      "Missing required R package(s): ",
-      paste(missing_packages, collapse = ", "),
-      ". Run environment/postInstall.sh or rebuild the Code Ocean environment.",
-      call. = FALSE
-    )
-  }
-}
-
-remove_default_rplots <- function() {
-  default_rplots <- unique(c(
-    file.path(getwd(), "Rplots.pdf"),
-    file.path(runtime_root, "Rplots.pdf"),
-    file.path(runtime_root, "code", "Rplots.pdf")
-  ))
-  for (path in default_rplots[file.exists(default_rplots)]) {
-    file.remove(path)
-  }
-}
-
-opts <- parse_args(commandArgs(TRUE))
-if (opts$help) {
-  usage()
-  quit(status = 0)
-}
-
-require_jsonlite()
-require_runtime_packages()
-
-params_path <- opts$params
-if (is.null(params_path)) {
-  params_path <- default_existing_path(c("/data/params.json", file.path(runtime_root, "data", "example_inputs", "params.json")))
-}
-params_path <- resolve_path(params_path)
-if (!file.exists(params_path)) {
-  stop("Missing params JSON: ", params_path, call. = FALSE)
-}
-
-params <- jsonlite::fromJSON(params_path)
-deg_table_path <- opts$deg_table
-if (is.null(deg_table_path)) {
-  deg_table_path <- Sys.getenv("OMIX_DEG_TABLE", unset = "")
-}
-if (!nzchar(deg_table_path) && !is.null(params$inputs$deg_table_file)) {
-  deg_table_path <- params$inputs$deg_table_file
-}
-if (!nzchar(deg_table_path)) {
-  deg_table_path <- default_existing_path(c("/data/deg_table.csv", file.path(runtime_root, "data", "example_inputs", "deg_table.csv")))
-}
-deg_table_path <- resolve_path(deg_table_path)
-if (!file.exists(deg_table_path)) {
-  stop("Missing DEG table CSV: ", deg_table_path, call. = FALSE)
-}
-
-results_dir <- opts$results_dir
-if (is.null(results_dir)) {
-  results_dir <- Sys.getenv("RESULTS_DIR", unset = "")
-}
-if (!nzchar(results_dir)) {
-  results_dir <- if (dir.exists("/results")) "/results" else file.path(runtime_root, "results")
-}
-results_dir <- resolve_path(results_dir)
-dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
-
-deg_table <- utils::read.csv(deg_table_path, check.names = FALSE)
-function_args <- params$function_args
-function_args$function_name <- NULL
-function_args$deg_table <- deg_table
-function_args$output_file_path <- file.path(results_dir, "volcano_plot.png")
-
-required_columns <- unique(c(function_args$column_with_feature_id, unlist(function_args$significance_column), unlist(function_args$log2_fold_change_column)))
-missing_columns <- setdiff(required_columns, names(deg_table))
-if (length(missing_columns) > 0) {
-  stop("DEG table is missing required column(s): ", paste(missing_columns, collapse = ", "), call. = FALSE)
-}
-
-source_path <- file.path(runtime_root, "code", "functions", source_template)
-source(source_path)
-if (!exists(entry_function)) {
-  stop("Missing entry function after sourcing ", source_template, ": ", entry_function, call. = FALSE)
-}
-
-if (opts$dry_run) {
-  jsonlite::write_json(
-    list(
-      module = module_name,
-      display_name = display_name,
-      source_template = source_template,
-      entry_function = entry_function,
-      params_path = params_path,
-      deg_table_path = deg_table_path,
-      results_dir = results_dir,
-      rows = nrow(deg_table),
-      columns = names(deg_table),
-      dry_run = TRUE
-    ),
-    file.path(results_dir, "volcano_dry_run.json"),
-    pretty = TRUE,
-    auto_unbox = TRUE
-  )
-  message("Dry-run validation complete: ", display_name)
-  quit(status = 0)
-}
-
-result <- do.call(entry_function, function_args)
-remove_default_rplots()
-jsonlite::write_json(
-  list(
-    module = module_name,
-    display_name = display_name,
-    source_template = source_template,
-    entry_function = entry_function,
-    params_path = params_path,
-    deg_table_path = deg_table_path,
-    results_dir = results_dir,
-    output_files = list.files(results_dir, full.names = FALSE),
-    completed_at = format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")
-  ),
-  file.path(results_dir, "run_manifest.json"),
-  pretty = TRUE,
-  auto_unbox = TRUE
+# Define CLI options
+option_list <- list(
+  make_option("--deg_table", type = "character", help = "Path to DEG table CSV"),
+  make_option("--pvalue_type", type = "character", default = "adjusted"),
+  make_option("--column_with_feature_id", type = "character", default = NULL),
+  make_option("--significance_column", type = "character", default = NULL),
+  make_option("--log2_fold_change_column", type = "character", default = NULL),
+  make_option("--p_value_threshold", type = "double", default = 0.05),
+  make_option("--log2_fold_change_threshold", type = "double", default = 1.0),
+  make_option("--choose_feature_to_label_by", type = "character", default = "p-value"),
+  make_option("--number_of_features_to_label", type = "integer", default = 30),
+  make_option("--label_only_my_feature_list", type = "character", default = "false"),
+  make_option("--my_feature_list", type = "character", default = ""),
+  make_option("--top_genes_labeled_only_if_passing_thresholds", type = "character", default = "true"),
+  make_option("--label_size", type = "double", default = 4),
+  make_option("--use_custom_axis_label", type = "character", default = "false"),
+  make_option("--custom_significance_label", type = "character", default = "p-value"),
+  make_option("--custom_log_fold_change_label", type = "character", default = "log2FC"),
+  make_option("--plot_title", type = "character", default = "Volcano Plots"),
+  make_option("--y_limit", type = "double", default = 0),
+  make_option("--use_auto_axis_capping", type = "character", default = "true"),
+  make_option("--auto_axis_capping_quantile", type = "double", default = 0.9999),
+  make_option("--auto_axis_capping_symmetric_x", type = "character", default = "true"),
+  make_option("--custom_x_axis_limits", type = "character", default = ""),
+  make_option("--x_limit_padding", type = "double", default = 0),
+  make_option("--y_limit_padding", type = "double", default = 0),
+  make_option("--axis_label_size", type = "double", default = 24),
+  make_option("--point_size", type = "double", default = 2),
+  make_option("--image_width", type = "integer", default = 3000),
+  make_option("--image_height", type = "integer", default = 3000),
+  make_option("--resolution_dpi_", type = "integer", default = 300),
+  make_option("--color_not_significant", type = "character", default = "gray"),
+  make_option("--color_fold_change_only", type = "character", default = "orange"),
+  make_option("--color_significant_only", type = "character", default = "green4"),
+  make_option("--color_significant_and_fold_change", type = "character", default = "red3")
 )
 
+parser <- OptionParser(
+  usage = "Usage: %prog --deg_table PATH [options]",
+  option_list = option_list,
+  description = "Generate enhanced volcano plots from differential expression analysis"
+)
+
+opt <- parse_args(parser, args = commandArgs(trailingOnly = TRUE))
+
+# Validate required arguments
+if (is.null(opt$deg_table) || !nzchar(opt$deg_table)) {
+  # Try attached data asset first (check /data/example_deg/ for CSV files)
+  attached_data_path <- "/data/example_deg/DEG-Results.csv"
+  example_path <- file.path(runtime_root, "data", "example_inputs", "deg_table.csv")
+  
+  if (file.exists(attached_data_path)) {
+    message("Note: No DEG table provided, using attached data asset: ", attached_data_path)
+    opt$deg_table <- attached_data_path
+  } else if (file.exists(example_path)) {
+    message("Note: No DEG table provided, using example data from data/example_inputs/deg_table.csv")
+    opt$deg_table <- example_path
+  } else {
+    stop("ERROR: --deg_table is required. Please upload a DEG table CSV file.", call. = FALSE)
+  }
+}
+
+if (!file.exists(opt$deg_table)) {
+  stop("ERROR: DEG table file not found: ", opt$deg_table, call. = FALSE)
+}
+
+# Convert string booleans to logical
+opt$label_only_my_feature_list <- tolower(opt$label_only_my_feature_list) == "true"
+opt$top_genes_labeled_only_if_passing_thresholds <- tolower(opt$top_genes_labeled_only_if_passing_thresholds) == "true"
+opt$use_custom_axis_label <- tolower(opt$use_custom_axis_label) == "true"
+opt$use_auto_axis_capping <- tolower(opt$use_auto_axis_capping) == "true"
+opt$auto_axis_capping_symmetric_x <- tolower(opt$auto_axis_capping_symmetric_x) == "true"
+
+# Read DEG table
+deg_table <- read.csv(opt$deg_table, check.names = FALSE, stringsAsFactors = FALSE)
+
+# Results directory
+results_dir <- if (dir.exists("/results")) "/results" else file.path(runtime_root, "results")
+dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
+
+# Source volcano plot function
+source(file.path(runtime_root, "code", "functions", "Volcano_Plot_Enhanced_v85.R"))
+
+# Call volcano plot function
+result <- volcano_plot_enhanced(
+  deg_table = deg_table,
+  pvalue_type = opt$pvalue_type,
+  column_with_feature_id = opt$column_with_feature_id,
+  significance_column = opt$significance_column,
+  log2_fold_change_column = opt$log2_fold_change_column,
+  p_value_threshold = opt$p_value_threshold,
+  log2_fold_change_threshold = opt$log2_fold_change_threshold,
+  choose_feature_to_label_by = opt$choose_feature_to_label_by,
+  number_of_features_to_label = opt$number_of_features_to_label,
+  label_only_my_feature_list = opt$label_only_my_feature_list,
+  use_custom_axis_label = opt$use_custom_axis_label,
+  my_feature_list = opt$my_feature_list,
+  top_genes_labeled_only_if_passing_thresholds = opt$top_genes_labeled_only_if_passing_thresholds,
+  label_size = opt$label_size,
+  custom_significance_label = opt$custom_significance_label,
+  custom_log_fold_change_label = opt$custom_log_fold_change_label,
+  plot_title = opt$plot_title,
+  y_limit = opt$y_limit,
+  use_auto_axis_capping = opt$use_auto_axis_capping,
+  auto_axis_capping_quantile = opt$auto_axis_capping_quantile,
+  auto_axis_capping_min_y_limit = 0,
+  auto_axis_capping_symmetric_x = opt$auto_axis_capping_symmetric_x,
+  custom_x_axis_limits = opt$custom_x_axis_limits,
+  x_limit_padding = opt$x_limit_padding,
+  y_limit_padding = opt$y_limit_padding,
+  axis_label_size = opt$axis_label_size,
+  point_size = opt$point_size,
+  image_width = opt$image_width,
+  image_height = opt$image_height,
+  resolution_dpi_ = opt$resolution_dpi_,
+  output_file_path = file.path(results_dir, "volcano_plot.png"),
+  color_not_significant = opt$color_not_significant,
+  color_fold_change_only = opt$color_fold_change_only,
+  color_significant_only = opt$color_significant_only,
+  color_significant_and_fold_change = opt$color_significant_and_fold_change
+)
+
+# Clean up default Rplots.pdf if created
+default_rplots <- c(
+  file.path(getwd(), "Rplots.pdf"),
+  file.path(runtime_root, "Rplots.pdf"),
+  file.path(runtime_root, "code", "Rplots.pdf")
+)
+for (path in unique(default_rplots[file.exists(default_rplots)])) {
+  file.remove(path)
+}
+
+message("Volcano plots generated successfully in ", results_dir)
 invisible(result)

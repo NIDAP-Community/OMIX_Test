@@ -128,6 +128,7 @@
 #' @export
 volcano_plot_enhanced <- function(
   deg_table,
+  pvalue_type = "adjusted",
   column_with_feature_id,
   significance_column,
   log2_fold_change_column,
@@ -144,8 +145,8 @@ volcano_plot_enhanced <- function(
   custom_log_fold_change_label = "log2FC",
   plot_title = "Volcano Plots",
   y_limit = 0,
-  use_auto_axis_capping = FALSE,
-  auto_axis_capping_quantile = 0.995,
+  use_auto_axis_capping = TRUE,
+  auto_axis_capping_quantile = 0.9999,
   auto_axis_capping_min_y_limit = 0,
   auto_axis_capping_symmetric_x = TRUE,
   custom_x_axis_limits = NULL,
@@ -215,14 +216,31 @@ volcano_plot_enhanced <- function(
     candidates[1]
   }
 
-  infer_significance_columns <- function(df) {
+  infer_significance_columns <- function(df, prefer_adjusted = TRUE) {
     p_cols <- grep(
       "adjpval|pval|p_value|pvalue|fdr",
       colnames(df),
       ignore.case = TRUE,
       value = TRUE
     )
-    p_cols[vapply(df[p_cols], is.numeric, logical(1))]
+    p_cols <- p_cols[vapply(df[p_cols], is.numeric, logical(1))]
+    
+    # Split into adjusted and nominal
+    adj_cols <- grep("adj", p_cols, ignore.case = TRUE, value = TRUE)
+    nom_cols <- grep("^((?!adj).)*pval", p_cols, ignore.case = TRUE, value = TRUE, perl = TRUE)
+    
+    # Return based on preference
+    if (prefer_adjusted && length(adj_cols) > 0) {
+      return(adj_cols)
+    } else if (!prefer_adjusted && length(nom_cols) > 0) {
+      return(nom_cols)
+    } else if (length(adj_cols) > 0) {
+      return(adj_cols)
+    } else if (length(nom_cols) > 0) {
+      return(nom_cols)
+    } else {
+      return(p_cols)
+    }
   }
 
   infer_logfc_columns <- function(df) {
@@ -245,7 +263,8 @@ volcano_plot_enhanced <- function(
   }
 
   if (is.null(significance_column) || length(significance_column) == 0) {
-    significance_column <- infer_significance_columns(deg_table)
+    prefer_adjusted <- tolower(pvalue_type) == "adjusted"
+    significance_column <- infer_significance_columns(deg_table, prefer_adjusted)
     if (length(significance_column) == 0) {
       stop("ERROR: Could not infer a significance column.")
     }
@@ -442,7 +461,8 @@ volcano_plot_enhanced <- function(
       dplyr::mutate(
         !!sym(lfc_col) := tidyr::replace_na(.data[[lfc_col]], 0),
         !!sym(sig_col) := tidyr::replace_na(.data[[sig_col]], 1)
-      )
+      ) %>%
+      as.data.frame()
 
     plot_sig_name <- sig_col
     plot_lfc_name <- lfc_col
@@ -508,7 +528,8 @@ volcano_plot_enhanced <- function(
           as.character(.data[[column_with_feature_id]]),
           ""
         )
-      )
+      ) %>%
+      as.data.frame()
 
     max_y <- get_y_max(
       values = df$neg_log10_p,
@@ -527,30 +548,31 @@ volcano_plot_enhanced <- function(
       symmetric_x = auto_axis_capping_symmetric_x
     )
 
-    plot_obj <- ggplot(df, aes(x = .data[[plot_lfc_name]], y = neg_log10_p)) +
-      geom_point(
-        aes(color = significance_group),
+    # Build ggplot object
+    plot_obj <- ggplot2::ggplot(df, ggplot2::aes(x = .data[[plot_lfc_name]], y = .data[["neg_log10_p"]])) +
+      ggplot2::geom_point(
+        ggplot2::aes(color = .data[["significance_group"]]),
         size = point_size,
         alpha = 0.85
       ) +
       ggrepel::geom_text_repel(
-        aes(label = plot_label),
+        ggplot2::aes(label = .data[["plot_label"]]),
         size = label_size,
         max.overlaps = Inf,
         box.padding = 0.4,
         min.segment.length = 0
       ) +
-      geom_vline(
+      ggplot2::geom_vline(
         xintercept = c(-log2_fold_change_threshold, log2_fold_change_threshold),
         linetype = "dashed",
         color = "grey40"
       ) +
-      geom_hline(
+      ggplot2::geom_hline(
         yintercept = -log10(p_value_threshold),
         linetype = "dashed",
         color = "grey40"
       ) +
-      scale_color_manual(
+      ggplot2::scale_color_manual(
         values = c(
           "Not significant" = color_not_significant,
           "Fold change only" = color_fold_change_only,
@@ -558,20 +580,20 @@ volcano_plot_enhanced <- function(
           "Significant and fold change" = color_significant_and_fold_change
         )
       ) +
-      coord_cartesian(
+      ggplot2::coord_cartesian(
         xlim = x_limits,
         ylim = c(0, ceiling(max_y) + y_limit_padding)
       ) +
-      labs(
+      ggplot2::labs(
         title = plot_title,
         subtitle = gsub("_", " ", sig_col),
         x = gsub("_", " ", plot_lfc_name),
         y = gsub("_", " ", plot_sig_name),
         color = NULL
       ) +
-      theme_bw() +
-      theme(
-        axis.title = element_text(size = axis_label_size),
+      ggplot2::theme_bw() +
+      ggplot2::theme(
+        axis.title = ggplot2::element_text(size = axis_label_size),
         legend.position = "top"
       )
 

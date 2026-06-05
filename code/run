@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-set -ex
+set -euo pipefail
 
-# This is the master script for the capsule. When you click "Reproducible Run", the code in this file will execute.
+# OMIX Volcano - Reproducible Run entrypoint
+# Passes all App Panel parameters to main.R as named CLI arguments
+
+cd /code
 Rscript main.R "$@"
