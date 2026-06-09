@@ -25,7 +25,7 @@ runtime_root <- normalizePath(file.path(get_script_dir(), ".."), mustWork = TRUE
 # Define CLI options
 option_list <- list(
   make_option("--deg_table", type = "character", help = "Path to DEG table CSV"),
-  make_option("--pvalue_type", type = "character", default = "adjusted"),
+  make_option("--pvalue_type", type = "character", default = "nominal"),
   make_option("--column_with_feature_id", type = "character", default = NULL),
   make_option("--significance_column", type = "character", default = NULL),
   make_option("--log2_fold_change_column", type = "character", default = NULL),
@@ -37,10 +37,14 @@ option_list <- list(
   make_option("--my_feature_list", type = "character", default = ""),
   make_option("--top_genes_labeled_only_if_passing_thresholds", type = "character", default = "true"),
   make_option("--label_size", type = "double", default = 4),
+  make_option("--label_box_padding", type = "double", default = 1),
+  make_option("--label_force", type = "double", default = 1),
+  make_option("--label_max_overlaps", type = "double", default = Inf),
   make_option("--use_custom_axis_label", type = "character", default = "false"),
   make_option("--custom_significance_label", type = "character", default = "p-value"),
   make_option("--custom_log_fold_change_label", type = "character", default = "log2FC"),
-  make_option("--plot_title", type = "character", default = "Volcano Plots"),
+  make_option("--plot_title", type = "character", default = "Volcano Plot"),
+  make_option("--plot_subtitle", type = "character", default = ""),
   make_option("--y_limit", type = "double", default = 0),
   make_option("--use_auto_axis_capping", type = "character", default = "true"),
   make_option("--auto_axis_capping_quantile", type = "double", default = 0.9999),
@@ -48,7 +52,9 @@ option_list <- list(
   make_option("--custom_x_axis_limits", type = "character", default = ""),
   make_option("--x_limit_padding", type = "double", default = 0),
   make_option("--y_limit_padding", type = "double", default = 0),
-  make_option("--axis_label_size", type = "double", default = 24),
+  make_option("--plot_title_size", type = "double", default = 16),
+  make_option("--axis_title_size", type = "double", default = 14),
+  make_option("--axis_text_size", type = "double", default = 12),
   make_option("--point_size", type = "double", default = 2),
   make_option("--image_width", type = "integer", default = 3000),
   make_option("--image_height", type = "integer", default = 3000),
@@ -103,7 +109,7 @@ results_dir <- if (dir.exists("/results")) "/results" else file.path(runtime_roo
 dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
 
 # Source volcano plot function
-source(file.path(runtime_root, "code", "functions", "Volcano_Plot_Enhanced_v85.R"))
+source(file.path(runtime_root, "code", "functions", "Volcano_Plot_Enhanced.R"))
 
 # Call volcano plot function
 result <- volcano_plot_enhanced(
@@ -121,9 +127,13 @@ result <- volcano_plot_enhanced(
   my_feature_list = opt$my_feature_list,
   top_genes_labeled_only_if_passing_thresholds = opt$top_genes_labeled_only_if_passing_thresholds,
   label_size = opt$label_size,
+  label_box_padding = opt$label_box_padding,
+  label_force = opt$label_force,
+  label_max_overlaps = opt$label_max_overlaps,
   custom_significance_label = opt$custom_significance_label,
   custom_log_fold_change_label = opt$custom_log_fold_change_label,
   plot_title = opt$plot_title,
+  plot_subtitle = opt$plot_subtitle,
   y_limit = opt$y_limit,
   use_auto_axis_capping = opt$use_auto_axis_capping,
   auto_axis_capping_quantile = opt$auto_axis_capping_quantile,
@@ -132,7 +142,9 @@ result <- volcano_plot_enhanced(
   custom_x_axis_limits = opt$custom_x_axis_limits,
   x_limit_padding = opt$x_limit_padding,
   y_limit_padding = opt$y_limit_padding,
-  axis_label_size = opt$axis_label_size,
+  plot_title_size = opt$plot_title_size,
+  axis_title_size = opt$axis_title_size,
+  axis_text_size = opt$axis_text_size,
   point_size = opt$point_size,
   image_width = opt$image_width,
   image_height = opt$image_height,

@@ -128,7 +128,7 @@
 #' @export
 volcano_plot_enhanced <- function(
   deg_table,
-  pvalue_type = "adjusted",
+  pvalue_type = "nominal",
   column_with_feature_id,
   significance_column,
   log2_fold_change_column,
@@ -141,9 +141,13 @@ volcano_plot_enhanced <- function(
   my_feature_list = NULL,
   top_genes_labeled_only_if_passing_thresholds = TRUE,
   label_size = 4,
+  label_box_padding = 1,
+  label_force = 1,
+  label_max_overlaps = Inf,
   custom_significance_label = "p-value",
   custom_log_fold_change_label = "log2FC",
   plot_title = "Volcano Plots",
+  plot_subtitle = "",
   y_limit = 0,
   use_auto_axis_capping = TRUE,
   auto_axis_capping_quantile = 0.9999,
@@ -152,7 +156,9 @@ volcano_plot_enhanced <- function(
   custom_x_axis_limits = NULL,
   x_limit_padding = 0,
   y_limit_padding = 0,
-  axis_label_size = 24,
+  plot_title_size = 16,
+  axis_title_size = 14,
+  axis_text_size = 12,
   point_size = 2,
   image_width = 3000,
   image_height = 3000,
@@ -558,8 +564,9 @@ volcano_plot_enhanced <- function(
       ggrepel::geom_text_repel(
         ggplot2::aes(label = .data[["plot_label"]]),
         size = label_size,
-        max.overlaps = Inf,
-        box.padding = 0.4,
+        max.overlaps = label_max_overlaps,
+        box.padding = label_box_padding,
+        force = label_force,
         min.segment.length = 0
       ) +
       ggplot2::geom_vline(
@@ -586,14 +593,17 @@ volcano_plot_enhanced <- function(
       ) +
       ggplot2::labs(
         title = plot_title,
-        subtitle = gsub("_", " ", sig_col),
+        subtitle = if (nzchar(plot_subtitle)) plot_subtitle else gsub("_", " ", sig_col),
         x = gsub("_", " ", plot_lfc_name),
         y = gsub("_", " ", plot_sig_name),
         color = NULL
       ) +
       ggplot2::theme_bw() +
       ggplot2::theme(
-        axis.title = ggplot2::element_text(size = axis_label_size),
+        plot.title = ggplot2::element_text(size = plot_title_size, face = "bold"),
+        axis.title = ggplot2::element_text(size = axis_title_size),
+        axis.text = ggplot2::element_text(size = axis_text_size),
+        legend.text = ggplot2::element_text(size = 11),
         legend.position = "top"
       )
 

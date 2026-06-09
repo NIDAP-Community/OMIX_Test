@@ -34,7 +34,7 @@
 	],
 	"parameters": [
 		{
-			"id": "Ohoy5Ohj3mAS4aoC",
+			"id": "q5D9oxXQisl8Fs6f",
 			"category": "basic",
 			"name": "DEG Table CSV",
 			"param_name": "deg_table",
@@ -43,21 +43,21 @@
 			"value_type": "string"
 		},
 		{
-			"id": "9ylGCuEAHDydHqCd",
+			"id": "y3t0F8znEKbxoH8K",
 			"category": "basic",
 			"name": "P-value Type",
 			"param_name": "pvalue_type",
 			"help_text": "Choose 'adjusted' for FDR-corrected p-values (adjpval) or 'nominal' for uncorrected p-values (pval).",
 			"type": "list",
 			"value_type": "string",
-			"default_value": "adjusted",
+			"default_value": "nominal",
 			"extra_data": [
 				"adjusted",
 				"nominal"
 			]
 		},
 		{
-			"id": "Y9s2Cocgr7UITCAM",
+			"id": "psGRY6WMg5b6lWTa",
 			"category": "basic",
 			"name": "P-value Threshold",
 			"param_name": "p_value_threshold",
@@ -67,7 +67,7 @@
 			"default_value": "0.05"
 		},
 		{
-			"id": "k0BNJH8pvEiyXUbM",
+			"id": "vkbwD0dYLw9vtZfs",
 			"category": "basic",
 			"name": "Log2 Fold Change Threshold",
 			"param_name": "log2_fold_change_threshold",
@@ -77,7 +77,7 @@
 			"default_value": "1.0"
 		},
 		{
-			"id": "3jFwHhc8cHuhDZtn",
+			"id": "sxQXXc31RiQDvLzg",
 			"category": "labeling",
 			"name": "Number of Features to Label",
 			"param_name": "number_of_features_to_label",
@@ -87,7 +87,7 @@
 			"default_value": "30"
 		},
 		{
-			"id": "b9U2ZUKPCMgRI3Sy",
+			"id": "GqlWBujgg1WJSXxC",
 			"category": "labeling",
 			"name": "Choose Feature to Label By",
 			"param_name": "choose_feature_to_label_by",
@@ -101,7 +101,7 @@
 			]
 		},
 		{
-			"id": "PDx8Twg28ZYMLxfs",
+			"id": "hzADutsCj7cYnD9l",
 			"category": "labeling",
 			"name": "Label Only Passing Thresholds",
 			"param_name": "top_genes_labeled_only_if_passing_thresholds",
@@ -115,7 +115,7 @@
 			]
 		},
 		{
-			"id": "aMd7s2aohDjEAn4a",
+			"id": "2XINhlUxEmHQpHOu",
 			"category": "labeling",
 			"name": "Custom Gene List",
 			"param_name": "my_feature_list",
@@ -124,7 +124,7 @@
 			"value_type": "string"
 		},
 		{
-			"id": "w2Od4XCgpOZ4kowO",
+			"id": "OL6kjYlixuJ6B9jL",
 			"category": "labeling",
 			"name": "Label Only Custom List",
 			"param_name": "label_only_my_feature_list",
@@ -138,17 +138,86 @@
 			]
 		},
 		{
-			"id": "XWMAsf6toReGLTiV",
+			"id": "afVZtR8W38HJd3mH",
+			"category": "labeling",
+			"name": "Label Box Padding",
+			"param_name": "label_box_padding",
+			"help_text": "Padding around each label box. Higher values = more space around labels, reducing overlap.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "1"
+		},
+		{
+			"id": "lcoHIkruJqE3bEp7",
+			"category": "labeling",
+			"name": "Label Repulsion Force",
+			"param_name": "label_force",
+			"help_text": "Repulsion force between overlapping labels. Higher values = stronger repulsion (0.5-3 typical range).",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "1"
+		},
+		{
+			"id": "l6hDick0InN9aHJB",
+			"category": "labeling",
+			"name": "Label Max Overlaps",
+			"param_name": "label_max_overlaps",
+			"help_text": "Maximum number of overlapping labels allowed. Use lower values to hide crowded labels.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "999"
+		},
+		{
+			"id": "KVhrrjIsG7nVhQGK",
 			"category": "visualization",
 			"name": "Plot Title",
 			"param_name": "plot_title",
 			"help_text": "Main title for the volcano plot.",
 			"type": "text",
 			"value_type": "string",
-			"default_value": "Volcano Plots"
+			"default_value": "Volcano Plot"
 		},
 		{
-			"id": "ESv1mpaxU0Mhk0Lq",
+			"id": "eVB7XJkilJU0AqUb",
+			"category": "visualization",
+			"name": "Plot Subtitle",
+			"param_name": "plot_subtitle",
+			"help_text": "Optional subtitle for the plot. Leave empty to auto-generate from comparison name.",
+			"type": "text",
+			"value_type": "string"
+		},
+		{
+			"id": "qDLzINe1lYPeGevO",
+			"category": "visualization",
+			"name": "Plot Title Size",
+			"param_name": "plot_title_size",
+			"help_text": "Font size for the main plot title.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "16"
+		},
+		{
+			"id": "tMarZjFGUEnQ116g",
+			"category": "visualization",
+			"name": "Axis Title Size",
+			"param_name": "axis_title_size",
+			"help_text": "Font size for X and Y axis titles (e.g., 'log2 Fold Change', '-log10(p-value)').",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "14"
+		},
+		{
+			"id": "X3jxVRgXI8CJ9nqL",
+			"category": "visualization",
+			"name": "Axis Tick Label Size",
+			"param_name": "axis_text_size",
+			"help_text": "Font size for axis tick labels (the numbers on the axes).",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "12"
+		},
+		{
+			"id": "RuaKk9KYSnm7coSf",
 			"category": "visualization",
 			"name": "Label Size",
 			"param_name": "label_size",
@@ -158,7 +227,7 @@
 			"default_value": "4"
 		},
 		{
-			"id": "qWjiETQD0vc4tFHQ",
+			"id": "Fb8uipKL58cHLAmx",
 			"category": "visualization",
 			"name": "Point Size",
 			"param_name": "point_size",
@@ -168,17 +237,7 @@
 			"default_value": "2"
 		},
 		{
-			"id": "VXqTEo5nQN2ffphW",
-			"category": "visualization",
-			"name": "Axis Label Size",
-			"param_name": "axis_label_size",
-			"help_text": "Font size for axis titles.",
-			"type": "text",
-			"value_type": "number",
-			"default_value": "24"
-		},
-		{
-			"id": "dbCCQ1oub7lVsFZl",
+			"id": "Klz5xFlo223Mmmt6",
 			"category": "visualization",
 			"name": "Image Width (pixels)",
 			"param_name": "image_width",
@@ -188,7 +247,7 @@
 			"default_value": "3000"
 		},
 		{
-			"id": "PhK8LiAx3a8oWz3B",
+			"id": "BOZxWI4ASWlHuEGr",
 			"category": "visualization",
 			"name": "Image Height (pixels)",
 			"param_name": "image_height",
@@ -198,7 +257,7 @@
 			"default_value": "3000"
 		},
 		{
-			"id": "oDLbP2dVy7sXBqOa",
+			"id": "0ydcY1B8aiprteyz",
 			"category": "visualization",
 			"name": "Resolution (DPI)",
 			"param_name": "resolution_dpi_",
@@ -208,7 +267,7 @@
 			"default_value": "300"
 		},
 		{
-			"id": "q5OVDOTTQ8Slei2l",
+			"id": "oUr3o566t1IAhcN6",
 			"category": "colors",
 			"name": "Not Significant Color",
 			"param_name": "color_not_significant",
@@ -218,7 +277,7 @@
 			"default_value": "gray"
 		},
 		{
-			"id": "zjHIL9Qd2LWn6TQK",
+			"id": "jmOvGjvXVjeBXqaf",
 			"category": "colors",
 			"name": "Fold Change Only Color",
 			"param_name": "color_fold_change_only",
@@ -228,7 +287,7 @@
 			"default_value": "orange"
 		},
 		{
-			"id": "ZsD920OOiRGdYyzk",
+			"id": "2lCIvX28vAbqo0oT",
 			"category": "colors",
 			"name": "Significant Only Color",
 			"param_name": "color_significant_only",
@@ -238,7 +297,7 @@
 			"default_value": "green4"
 		},
 		{
-			"id": "Ir2Q81jh275o7g33",
+			"id": "FUi8YmrGI1lE1p5B",
 			"category": "colors",
 			"name": "Significant + Fold Change Color",
 			"param_name": "color_significant_and_fold_change",
@@ -248,7 +307,7 @@
 			"default_value": "red3"
 		},
 		{
-			"id": "wKnckKZ3iNGzAC1d",
+			"id": "3JTyxk3s3R4ATv8j",
 			"category": "advanced",
 			"name": "Use Custom Axis Labels",
 			"param_name": "use_custom_axis_label",
@@ -262,7 +321,7 @@
 			]
 		},
 		{
-			"id": "1m2JdTj3sW6uHY19",
+			"id": "dYczcX8DM2ulP3be",
 			"category": "advanced",
 			"name": "Custom Significance Label",
 			"param_name": "custom_significance_label",
@@ -272,7 +331,7 @@
 			"default_value": "p-value"
 		},
 		{
-			"id": "ALEqFC8m4l4oIfja",
+			"id": "pRCK2xgJzuzPHZpm",
 			"category": "advanced",
 			"name": "Custom Log Fold Change Label",
 			"param_name": "custom_log_fold_change_label",
@@ -282,7 +341,7 @@
 			"default_value": "log2FC"
 		},
 		{
-			"id": "IGl6FEhF77nXf5Ul",
+			"id": "qMz5zsj0bEJW7uOu",
 			"category": "advanced",
 			"name": "Y-axis Limit",
 			"param_name": "y_limit",
@@ -292,7 +351,7 @@
 			"default_value": "0"
 		},
 		{
-			"id": "3y51wgrC4iXtOiSQ",
+			"id": "qZtQ3qFUF2KS2f7G",
 			"category": "advanced",
 			"name": "Use Auto Axis Capping",
 			"param_name": "use_auto_axis_capping",
@@ -306,7 +365,7 @@
 			]
 		},
 		{
-			"id": "omyj5IR7U3qvdKi2",
+			"id": "UXYrf2Wkyo8Lm8vV",
 			"category": "advanced",
 			"name": "Auto Capping Quantile",
 			"param_name": "auto_axis_capping_quantile",
@@ -316,7 +375,7 @@
 			"default_value": "0.9999"
 		},
 		{
-			"id": "mNMTvwGdv6DqqEOJ",
+			"id": "rjKTqvTvomXJ3Rym",
 			"category": "advanced",
 			"name": "Symmetric X-axis",
 			"param_name": "auto_axis_capping_symmetric_x",
@@ -330,7 +389,7 @@
 			]
 		},
 		{
-			"id": "UWRglDtVcimgg8Tb",
+			"id": "PdoJb61KvfDE0D8x",
 			"category": "advanced",
 			"name": "Custom X-axis Limits",
 			"param_name": "custom_x_axis_limits",
@@ -339,7 +398,7 @@
 			"value_type": "string"
 		},
 		{
-			"id": "YODRnL3Mvk9M4pcg",
+			"id": "EArdbgkC0XAzCeby",
 			"category": "advanced",
 			"name": "X-axis Padding",
 			"param_name": "x_limit_padding",
@@ -349,7 +408,7 @@
 			"default_value": "0"
 		},
 		{
-			"id": "l2GaRh5skSsZBs3h",
+			"id": "QCk54ZRhpm4zUwV9",
 			"category": "advanced",
 			"name": "Y-axis Padding",
 			"param_name": "y_limit_padding",
