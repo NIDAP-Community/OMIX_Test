@@ -2,28 +2,128 @@
 
 Technical implementation details for developers and maintainers.
 
-## Architecture
+## File Ownership Map
 
-This capsule is a runtime bundle for enhanced volcano plots from differential-expression tables. It is sourced from `Volcano_Plot_Enhanced.R` and runs the `volcano_plot_enhanced()` function.
+Each file in `runtime/` belongs to one of three ownership categories:
 
-### Core Components
+| Category | Description | Who uses it |
+|----------|-------------|-------------|
+| **Shared** | Scientific code and CLI interface used everywhere | All environments |
+| **Code Ocean** | Platform-specific hooks and metadata | Code Ocean capsules only |
+| **HPC / Local** | Standalone build and execution without Code Ocean | HPC clusters, laptops |
 
-- **Main entry point**: `/code/main.R` - CLI interface with optparse
-- **Plotting function**: `/code/functions/Volcano_Plot_Enhanced.R` - Core visualization logic
-- **Execution script**: `/code/run` - Bash driver for reproducible runs
+### Shared (used by all environments)
+
+```
+runtime/
+├── run.sh                          # Canonical entrypoint (all environments)
+├── code/
+│   ├── main.R                      # CLI interface (optparse)
+│   └── functions/
+│       └── Volcano_Plot_Enhanced.R # Core scientific function
+├── data/
+│   └── example_inputs/             # Tiny validation data
+├── docs/
+│   └── usage.md                    # User-facing run instructions
+└── results/                        # Output directory (gitignored except README)
+```
+
+### Code Ocean Only
+
+```
+runtime/
+├── code/run                        # CO-specific entrypoint (assumes /code path)
+├── environment/
+│   ├── Dockerfile                  # CO image build (uses $REGISTRY_HOST base)
+│   ├── postInstall.sh              # Dependency installer (also used in CI)
+│   └── postinstall                 # Lowercase alias for CO platform hook
+└── metadata/
+    └── metadata.yml                # CO capsule metadata
+```
+
+### HPC / Local Only
+
+```
+runtime/
+└── tests/
+    └── test_run_small.sh           # Smoke test (runs postInstall.sh + pipeline)
+```
+
+## Runtime Environment
+
+All visualization modules share a single container image:
+`ghcr.io/nidap-community/omix-r-visualization:latest`
+
+This image is:
+- Built from `starter-environments/r-visualization/Dockerfile` (pinned package versions)
+- Published to GHCR on merge to `main`
+- Used by Code Ocean capsules as their runtime environment
+- Pulled by HPC users via `apptainer pull`
+
+**There is no per-module Dockerfile.** The shared image contains all packages for
+all visualization modules. Module code is bind-mounted at runtime, not baked in.
+
+### For HPC
+
+```bash
+# Pull the shared image (one time)
+apptainer pull docker://ghcr.io/nidap-community/omix-r-visualization:latest
+
+# Run volcano
+cd modules/volcano/runtime
+apptainer exec --cleanenv \
+  --bind "$PWD:/work" \
+  --bind "$PWD/results:/results" \
+  /path/to/omix-r-visualization_latest.sif \
+  bash /work/run.sh --deg_table /data/input.csv
+```
+
+### For Code Ocean
+
+The `environment/Dockerfile` is a Code Ocean build artifact that installs the same
+pinned packages into CO's base image. It exists for CO's build system but produces
+an equivalent environment to the shared starter image.
+
+## Running on HPC
+
+### With the shared container
+
+```bash
+cd modules/volcano/runtime
+mkdir -p results
+
+apptainer exec --cleanenv \
+  --bind "$PWD:/work" \
+  --bind /path/to/deg_results.csv:/data/input.csv \
+  --bind "$PWD/results:/results" \
+  /path/to/omix-r-visualization_latest.sif \
+  bash /work/run.sh \
+    --deg_table /data/input.csv \
+    --pvalue_type adjusted \
+    --significance_column Treatment_vs_Control_adjpval \
+    --log2_fold_change_column Treatment_vs_Control_logFC \
+    --image_width 3000 \
+    --image_height 3000 \
+    --resolution_dpi_ 300
+```
+
+### Without a container (module installed locally)
+
+```bash
+cd modules/volcano/runtime
+bash environment/postInstall.sh   # one-time setup
+bash run.sh --deg_table /path/to/deg_results.csv
+```
 
 ## Input Specification
 
 ### Data Inputs
 
-Production inputs are mounted by the Code Ocean execution platform. The repository includes only tiny example inputs for dry-run validation.
-
-#### Parameters JSON
-- Location: `/data/params.json` or `--params PATH`
-- Format: JSON with `function_args` and `inputs` sections
+Production inputs are mounted by the Code Ocean execution platform. The repository
+includes only tiny example inputs for dry-run validation.
 
 #### DEG Table CSV
-- Location: `/data/deg_table.csv`, `--deg-table PATH`, or `inputs.deg_table_file` in params.json
+- Location: `--deg_table PATH` (CLI) or mounted at `/data/` (container)
 - Required columns:
   - Feature/gene identifier column
   - One or more significance columns (p-values)
@@ -42,150 +142,16 @@ Selection logic (`infer_significance_columns()`):
 
 ## Output Specification
 
-Files are written to `/results` in Code Ocean, or `results/` when run locally.
+Files are written to `/results` in container mode, or `runtime/results/` when run locally.
 
 ### Standard Outputs
-- **Volcano plot PNG files**: Named `volcano_plot_{comparison}_{pvalue_type}.png`
-- **Run manifest**: `run_manifest.json` with execution metadata
-
-### Dry-Run Mode
-- When enabled, writes `volcano_dry_run.json` instead of generating plots
+- **Volcano plot PNG files**: Named `volcano_plot_{comparison}.png`
 
 ## CLI Interface
 
-### Named Parameters Mode (Current)
-
-App Panel passes parameters as CLI flags:
+App Panel (Code Ocean) or the command line passes parameters as CLI flags:
 ```bash
-/code/run --pvalue_type nominal --p_value_threshold 0.05 --log2_fold_change_threshold 1.0 ...
+bash run.sh --pvalue_type nominal --p_value_threshold 0.05 --log2_fold_change_threshold 1.0 ...
 ```
 
-Main.R uses optparse to parse named arguments and forwards them to the plotting function.
-
-### Available Parameters
-
-See `option_list` in `/code/main.R` for the complete list. Key parameters:
-
-- `--pvalue_type`: "adjusted" or "nominal" (default: "nominal")
-- `--p_value_threshold`: Numeric threshold for significance
-- `--log2_fold_change_threshold`: Numeric threshold for fold change
-- `--use_auto_axis_capping`: "true" or "false" (default: "true")
-- `--auto_axis_capping_quantile`: 0-1 (default: 0.9999)
-- Font size parameters: `--plot_title_size`, `--axis_title_size`, `--axis_text_size`
-- Label repel parameters: `--label_box_padding`, `--label_force`, `--label_max_overlaps`
-
-## Color Customization
-
-Quadrant colors are configurable via parameters:
-
-```r
-color_not_significant          # Default: "gray"
-color_fold_change_only         # Default: "orange"
-color_significant_only         # Default: "green4"
-color_significant_and_fold_change  # Default: "red3"
-```
-
-Color formats supported:
-- Named colors: `"red"`, `"blue"`, `"gray"`, `"green4"`, `"orange"`
-- Hex codes: `"#D62828"`, `"#2A9D8F"`
-- RGB: `"rgb(214, 40, 40)"`
-
-## Advanced Features
-
-### Auto Axis Capping
-
-Controlled by `use_auto_axis_capping` and `auto_axis_capping_quantile`.
-
-When enabled:
-1. Calculates quantile-based limits for x and y axes
-2. Clips extreme outliers to improve visualization
-3. Optionally enforces symmetric x-axis limits
-
-**Quantile interpretation**:
-- 0.9999 = only top 0.01% outliers removed (less aggressive)
-- 0.995 = top 0.5% outliers removed (more aggressive)
-
-### Label Repulsion (ggrepel)
-
-Controlled by three parameters:
-- `label_box_padding`: Space around label boxes (default: 0.5)
-- `label_force`: Repulsion strength between labels (default: 1)
-- `label_max_overlaps`: Maximum overlapping labels allowed (default: 999)
-
-Uses `ggrepel::geom_text_repel()` to prevent label overlap.
-
-## File Structure
-
-```
-/code/
-├── main.R                        # CLI entry point
-├── run                           # Bash execution script
-├── functions/
-│   └── Volcano_Plot_Enhanced.R      # Core plotting function
-└── DEVELOPER.md                  # This file
-
-/data/
-└── example_deg/                  # Example input data
-
-/results/                         # Output directory (created at runtime)
-```
-
-## Dependencies
-
-### R Packages (CRAN)
-- ggplot2
-- ggrepel
-- dplyr
-- readr
-- optparse
-- stringr
-
-### Environment
-- Starter environment: R-based Code Ocean starter
-- See `/environment` for full package list
-
-## Reproducibility
-
-### Reproducible Run Requirements
-1. Use Released capsule version
-2. Execute via Code Ocean reproducible run
-3. Capture results as data assets
-
-### Non-deterministic Elements
-- ggrepel label placement (can vary slightly between runs)
-- R random number generation (set seed if needed)
-
-## Testing
-
-### Quick Test
-```bash
-cd /code
-Rscript main.R  # Uses example data by default
-```
-
-### With Custom Data
-```bash
-cd /code
-Rscript main.R --deg_table /data/my_data.csv \
-  --pvalue_type nominal \
-  --p_value_threshold 0.05
-```
-
-## Maintenance Notes
-
-### Version History
-- v85: Current version with label repel controls
-- Previous versions: See git history
-
-### Known Issues
-- Label placement can overlap with very high gene counts
-- Auto-capping may be too aggressive for some datasets (adjust quantile)
-
-### Future Enhancements
-- Interactive plots (plotly)
-- Batch processing mode
-- Additional plot types (MA plots, heatmaps)
-
-## Support
-
-For technical issues or feature requests, contact the capsule maintainer or Code Ocean support.
+All parameters are documented in `schemas/inputs.schema.json`.

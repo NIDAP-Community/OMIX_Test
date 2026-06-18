@@ -1,0 +1,228 @@
+<tool id="omix_volcano" name="OMIX Volcano Plot" version="0.2.0" profile="23.0">
+    <description>Generate publication-ready volcano plots from DEG results</description>
+
+    <requirements>
+        <container type="docker">ghcr.io/nidap-community/omix-r-visualization:latest</container>
+    </requirements>
+
+    <command detect_errors="exit_code"><![CDATA[
+        mkdir -p results &&
+        Rscript '$__tool_directory__/main.R'
+            --deg_table '$deg_table'
+            --pvalue_type '$pvalue_type'
+            #if str($column_with_feature_id)
+                --column_with_feature_id '$column_with_feature_id'
+            #end if
+            #if str($significance_column)
+                --significance_column '$significance_column'
+            #end if
+            #if str($log2_fold_change_column)
+                --log2_fold_change_column '$log2_fold_change_column'
+            #end if
+            --p_value_threshold $p_value_threshold
+            --log2_fold_change_threshold $log2_fold_change_threshold
+            --choose_feature_to_label_by '$choose_feature_to_label_by'
+            --number_of_features_to_label $number_of_features_to_label
+            --label_only_my_feature_list '$label_only_my_feature_list'
+            #if str($my_feature_list)
+                --my_feature_list '$my_feature_list'
+            #end if
+            --top_genes_labeled_only_if_passing_thresholds '$top_genes_labeled_only_if_passing_thresholds'
+            --label_size $label_size
+            --label_box_padding $label_box_padding
+            --label_force $label_force
+            --label_max_overlaps $label_max_overlaps
+            --use_custom_axis_label '$use_custom_axis_label'
+            #if str($custom_significance_label)
+                --custom_significance_label '$custom_significance_label'
+            #end if
+            #if str($custom_log_fold_change_label)
+                --custom_log_fold_change_label '$custom_log_fold_change_label'
+            #end if
+            --plot_title '$plot_title'
+            #if str($plot_subtitle)
+                --plot_subtitle '$plot_subtitle'
+            #end if
+            --y_limit $y_limit
+            --use_auto_axis_capping '$use_auto_axis_capping'
+            --auto_axis_capping_quantile $auto_axis_capping_quantile
+            --auto_axis_capping_symmetric_x '$auto_axis_capping_symmetric_x'
+            #if str($custom_x_axis_limits)
+                --custom_x_axis_limits '$custom_x_axis_limits'
+            #end if
+            --x_limit_padding $x_limit_padding
+            --y_limit_padding $y_limit_padding
+            --plot_title_size $plot_title_size
+            --axis_title_size $axis_title_size
+            --axis_text_size $axis_text_size
+            --point_size $point_size
+            --image_width $image_width
+            --image_height $image_height
+            --resolution_dpi_ $resolution_dpi
+            --color_not_significant '$color_not_significant'
+            --color_fold_change_only '$color_fold_change_only'
+            --color_significant_only '$color_significant_only'
+            --color_significant_and_fold_change '$color_significant_and_fold_change'
+    ]]></command>
+
+    <inputs>
+        <!-- Data -->
+        <param name="deg_table" type="data" format="csv,tabular" label="DEG results table"
+               help="CSV file with gene-level differential expression statistics (log2FC, p-value columns)"/>
+
+        <!-- Column mapping -->
+        <param name="pvalue_type" type="select" label="P-value type">
+            <option value="nominal" selected="true">Nominal (unadjusted)</option>
+            <option value="adjusted">Adjusted (FDR/BH)</option>
+        </param>
+        <param name="column_with_feature_id" type="text" optional="true" label="Feature ID column"
+               help="Column name containing gene/feature identifiers. Auto-detected if blank."/>
+        <param name="significance_column" type="text" optional="true" label="Significance column"
+               help="Column name for p-values. Auto-detected if blank."/>
+        <param name="log2_fold_change_column" type="text" optional="true" label="Log2 fold-change column"
+               help="Column name for log2FC values. Auto-detected if blank."/>
+
+        <!-- Thresholds -->
+        <param name="p_value_threshold" type="float" value="0.05" min="0" max="1"
+               label="P-value threshold"/>
+        <param name="log2_fold_change_threshold" type="float" value="1.0" min="0"
+               label="Log2 fold-change threshold"/>
+
+        <!-- Labeling -->
+        <param name="choose_feature_to_label_by" type="select" label="Label genes by">
+            <option value="p-value" selected="true">P-value (most significant)</option>
+            <option value="fold-change">Fold-change (largest effect)</option>
+        </param>
+        <param name="number_of_features_to_label" type="integer" value="30" min="0"
+               label="Number of features to label"/>
+        <param name="label_only_my_feature_list" type="select" label="Label only custom gene list?">
+            <option value="false" selected="true">No</option>
+            <option value="true">Yes</option>
+        </param>
+        <param name="my_feature_list" type="text" optional="true"
+               label="Custom gene list (comma-separated)"
+               help="Only used when 'Label only custom gene list' is Yes"/>
+        <param name="top_genes_labeled_only_if_passing_thresholds" type="select"
+               label="Only label genes passing thresholds?">
+            <option value="true" selected="true">Yes</option>
+            <option value="false">No</option>
+        </param>
+        <param name="label_size" type="float" value="4" min="0" label="Label font size"/>
+        <param name="label_box_padding" type="float" value="1" min="0" label="Label box padding"/>
+        <param name="label_force" type="float" value="1" min="0" label="Label repulsion force"/>
+        <param name="label_max_overlaps" type="float" value="100" min="0"
+               label="Max label overlaps (0 = no limit)"/>
+
+        <!-- Axis labels -->
+        <param name="use_custom_axis_label" type="select" label="Use custom axis labels?">
+            <option value="false" selected="true">No</option>
+            <option value="true">Yes</option>
+        </param>
+        <param name="custom_significance_label" type="text" value="p-value" label="Custom Y-axis label"/>
+        <param name="custom_log_fold_change_label" type="text" value="log2FC" label="Custom X-axis label"/>
+
+        <!-- Title -->
+        <param name="plot_title" type="text" value="Volcano Plot" label="Plot title"/>
+        <param name="plot_subtitle" type="text" optional="true" label="Plot subtitle"/>
+
+        <!-- Axis scaling -->
+        <param name="y_limit" type="float" value="0" min="0"
+               label="Manual Y-axis limit (0 = auto)"/>
+        <param name="use_auto_axis_capping" type="select" label="Use auto axis capping?">
+            <option value="true" selected="true">Yes</option>
+            <option value="false">No</option>
+        </param>
+        <param name="auto_axis_capping_quantile" type="float" value="0.9999" min="0" max="1"
+               label="Axis capping quantile"/>
+        <param name="auto_axis_capping_symmetric_x" type="select" label="Symmetric X-axis?">
+            <option value="true" selected="true">Yes</option>
+            <option value="false">No</option>
+        </param>
+        <param name="custom_x_axis_limits" type="text" optional="true"
+               label="Custom X-axis limits (e.g. -5,5)"/>
+        <param name="x_limit_padding" type="float" value="0" min="0" label="X-axis padding"/>
+        <param name="y_limit_padding" type="float" value="0" min="0" label="Y-axis padding"/>
+
+        <!-- Appearance -->
+        <param name="plot_title_size" type="float" value="16" min="1" label="Title font size"/>
+        <param name="axis_title_size" type="float" value="14" min="1" label="Axis title font size"/>
+        <param name="axis_text_size" type="float" value="12" min="1" label="Axis text font size"/>
+        <param name="point_size" type="float" value="2" min="0.1" label="Point size"/>
+        <param name="image_width" type="integer" value="3000" min="100" label="Image width (px)"/>
+        <param name="image_height" type="integer" value="3000" min="100" label="Image height (px)"/>
+        <param name="resolution_dpi" type="integer" value="300" min="72" label="Resolution (DPI)"/>
+
+        <!-- Colors -->
+        <param name="color_not_significant" type="text" value="gray" label="Color: not significant"/>
+        <param name="color_fold_change_only" type="text" value="orange" label="Color: fold-change only"/>
+        <param name="color_significant_only" type="text" value="green4" label="Color: significant only"/>
+        <param name="color_significant_and_fold_change" type="text" value="red3"
+               label="Color: significant + fold-change"/>
+    </inputs>
+
+    <outputs>
+        <data name="volcano_plot" format="png" from_work_dir="results/volcano_plot.png"
+              label="${tool.name} on ${on_string}"/>
+    </outputs>
+
+    <tests>
+        <test>
+            <param name="deg_table" value="deg_table.csv" ftype="csv"/>
+            <param name="p_value_threshold" value="0.05"/>
+            <param name="log2_fold_change_threshold" value="1.0"/>
+            <output name="volcano_plot" file="volcano_plot.png" compare="sim_size" delta="5000"/>
+        </test>
+    </tests>
+
+    <help><![CDATA[
+**OMIX Volcano Plot**
+
+Generate publication-ready volcano plots from differential expression analysis results.
+
+-----
+
+**Inputs**
+
+A CSV file containing at minimum:
+
+- A gene/feature identifier column
+- A log2 fold-change column
+- A p-value (or adjusted p-value) column
+
+Column names are auto-detected from common conventions (e.g. ``log2FoldChange``, ``padj``, ``Gene``),
+or you can specify them manually.
+
+-----
+
+**Outputs**
+
+A PNG image of the volcano plot with:
+
+- X-axis: log2 fold-change
+- Y-axis: -log10(p-value)
+- Color-coded significance categories
+- Labeled top genes (configurable)
+
+-----
+
+**Thresholds**
+
+Points are colored by four categories:
+
+1. Not significant (below both thresholds)
+2. Fold-change only (passes FC but not p-value)
+3. Significant only (passes p-value but not FC)
+4. Significant + fold-change (passes both)
+    ]]></help>
+
+    <citations>
+        <citation type="bibtex">
+@misc{omix_volcano,
+  title = {OMIX Volcano Plot Module},
+  author = {NIDAP Bioinformatics},
+  year = {2024},
+  url = {https://github.com/NIDAP-Community/OMIX_Test}
+}
+        </citation>
+    </citations>
+</tool>
