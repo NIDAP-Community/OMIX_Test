@@ -1,4 +1,4 @@
-source(file.path("core", "R", "module_contract.R"))
+source(file.path("scripts", "lib", "module_governance.R"))
 
 module_dirs <- list.dirs("modules", recursive = FALSE, full.names = TRUE)
 
@@ -18,4 +18,3 @@ if (any(failed)) {
 }
 
 message("Validated ", length(module_dirs), " OMIX module contract(s).")
-

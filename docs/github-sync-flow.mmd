@@ -1,0 +1,162 @@
+flowchart TD
+  %% High-level GitHub synchronization flow from either a local machine or Code Ocean.
+  %% Architecture: mod/<module> integration branches decouple fast CO iteration from main.
+  %% See code-ocean-sync-flow.mmd for the detailed reverse-sync subprocess.
+
+  subgraph GitHub["GitHub remote repository"]
+    Main["main\nOMIX monorepo source of truth\n(protected)"]
+    ModBranch["mod/<module>\nper-module integration branch\ntracks main, fast CO sync target"]
+    LocalBranch["feature/* or fix/*\nlocal review branch"]
+    COBranch["co/<module>\npersistent Code Ocean export branch\ncapsule-root layout"]
+    COSyncBranch["co-sync/<module>-YYYYMMDD-HHMMSS\ntemporary reverse-sync branch"]
+    PRLocal["Pull request\nlocal branch -> main"]
+    PRCO["Pull request\nco-sync -> mod/<module>\nauto-merge if CI passes"]
+    PRPromotion["Promotion pull request\nmod/<module> -> main\nbatched review"]
+  end
+
+  subgraph Local["Local machine route"]
+    PullLocal["git pull origin main"]
+    EditLocal["Edit modules, core, docs,\ntests, or starter-environments"]
+    TestLocal["Rscript tests/test-module-contract.R\nmodule smoke tests"]
+    CommitLocal["git commit"]
+    PushLocal["git push origin <branch>"]
+  end
+
+  subgraph Outbound["Outbound export to Code Ocean"]
+    ExportRuntime["scripts/code_ocean_sync.sh\noutbound <module> <CO_ROOT> --apply"]
+    ExportWorkflow["Also exports\n.github/workflows/auto-cosync-pr.yml\ninto co/<module> branch root"]
+    ExportReview["Review exported capsule root\ncode/ docs/ environment/\ndata/example_inputs/ results/README.md"]
+    PushCOBranch["Commit and push export\nto co/<module>"]
+  end
+
+  subgraph CodeOcean["Code Ocean route"]
+    PullCO["Pull or clone co/<module>"]
+    EditCO["Edit and validate capsule\ninside Code Ocean"]
+    CommitWIP["Commit without [sync]\nkeeps work on co/<module> only"]
+    CommitSync["Commit with [sync]\nrequests review via mod/<module>"]
+    PushFromCO["Push to origin co/<module>"]
+  end
+
+  subgraph Automation["GitHub Actions: auto-cosync-pr.yml"]
+    Trigger["Triggered on push to co/**\nwith [sync] in commit message"]
+    EnsureMod["Create mod/<module> from main\nif it doesn't exist"]
+    DuplicateCheck["Abort if another co-sync PR\nfor SAME module is open\n(different modules OK)"]
+    FreshMod["Checkout mod/<module>\nand worktree of co/<module>"]
+    ReverseSync["scripts/code_ocean_sync.sh reverse\nExcludes: .github/, .codeocean/,\nresults/**, data/** (except README\nand example_inputs)"]
+    ScopeCheck["Abort if changed paths\nescape modules/<module>/runtime/"]
+    NoChanges["Exit cleanly if no\nfile changes after filtering"]
+    CommitSync2["Commit staged changes\nto co-sync/<module>-timestamp"]
+    OpenPR["Open PR targeting mod/<module>\nwith auto-merge enabled"]
+  end
+
+  subgraph DupGuard["GitHub Actions: block-duplicate-cosync-pr.yml"]
+    PROpened["co-sync/* PR opened or reopened"]
+    CheckSiblings["Check for other open co-sync/*\nPRs for the SAME module"]
+    BlockOrPass["Fail + comment if duplicate\nfor same module; pass otherwise"]
+  end
+
+  subgraph Promotion["GitHub Actions: promote-mod-to-main.yml"]
+    ScheduleOrDispatch["Daily schedule or\nmanual workflow_dispatch"]
+    FindAhead["Find mod/* branches\nahead of main"]
+    CreatePromotionPR["Create PR: mod/<module> -> main\nwith commit log and checklist"]
+    RebaseMod["Rebase mod/* onto main\nafter promotion merges"]
+  end
+
+  subgraph Refresh["GitHub Actions: auto-refresh-export.yml"]
+    MainPush["Push to main touches\nmodules/<module>/runtime/**"]
+    DetectChanged["Detect changed module runtimes"]
+    OutboundRefresh["Run outbound sync\nto co/<module> automatically"]
+    RefreshCommit["Commit refresh to co/<module>\nwithout [sync] tag"]
+  end
+
+  subgraph CI["GitHub Actions: module-ci.yml"]
+    ContractValidation["Validate module manifests\nRscript tests/test-module-contract.R"]
+    ChangedModules["Report changed modules\ngit diff filtered to modules/"]
+  end
+
+  subgraph Review["Human review and merge"]
+    ReviewChanges["Review promotion PR\nconfirm scope and quality"]
+    ConfirmScope["Confirm no production data\nno generated results\nno .codeocean metadata"]
+    RunChecks["Contract + smoke tests\nmodules/<module>/runtime/tests/test_run_small.sh"]
+    MergeMain["Squash and merge to main"]
+    DeleteBranch["Delete temporary co-sync branch\nKeep persistent co/<module> and mod/<module>"]
+  end
+
+  %% === Local machine flow ===
+  Main --> PullLocal
+  PullLocal --> EditLocal --> TestLocal --> CommitLocal --> PushLocal --> LocalBranch --> PRLocal
+  PRLocal --> ReviewChanges
+
+  %% === Outbound export flow ===
+  Main --> ExportRuntime
+  ExportRuntime --> ExportWorkflow
+  ExportRuntime --> ExportReview
+  ExportReview --> PushCOBranch --> COBranch
+
+  %% === Code Ocean editing flow ===
+  COBranch --> PullCO --> EditCO
+  EditCO --> CommitWIP --> PushFromCO --> COBranch
+  EditCO --> CommitSync --> PushFromCO --> COBranch
+
+  %% === Automated reverse sync (CO -> mod/<module>) ===
+  COBranch --> Trigger
+  Trigger --> EnsureMod --> DuplicateCheck --> FreshMod --> ReverseSync
+  ReverseSync --> ScopeCheck
+  ScopeCheck --> NoChanges
+  ScopeCheck --> CommitSync2 --> COSyncBranch --> OpenPR --> PRCO
+
+  %% === Auto-merge into mod/<module> ===
+  PRCO --> ModBranch
+
+  %% === Duplicate guard on PR open ===
+  PRCO --> PROpened --> CheckSiblings --> BlockOrPass
+
+  %% === Promotion: mod/<module> -> main ===
+  ScheduleOrDispatch --> FindAhead --> CreatePromotionPR --> PRPromotion
+  ModBranch --> PRPromotion
+  PRPromotion --> ReviewChanges
+  MergeMain --> RebaseMod --> ModBranch
+
+  %% === Auto-refresh export after main changes ===
+  MergeMain --> MainPush --> DetectChanged --> OutboundRefresh --> RefreshCommit --> COBranch
+
+  %% === CI runs on all PRs ===
+  PRLocal --> CI
+  PRPromotion --> CI
+  CI --> ContractValidation
+  CI --> ChangedModules
+
+  %% === Review and merge (for promotion PRs) ===
+  ReviewChanges --> ConfirmScope --> RunChecks --> MergeMain --> DeleteBranch --> Main
+
+  %% === Warning about direct co/ -> main PRs ===
+  DirectWarning["Do not open a PR from co/<module>\ndirectly to main or mod/<module>.\nBranch layouts are incompatible:\nco/<module> has capsule-root layout,\nmain/mod have monorepo layout."]
+  COBranch -. blocked .-> DirectWarning
+  DirectWarning -. use [sync] instead .-> Trigger
+
+  %% === Guardrails summary ===
+  Guardrails["Sync guardrails\n- main is protected source of truth\n- mod/<module> is the fast integration layer\n- CO changes land on mod/<module> first, then promote to main\n- per-module parallelism (no global lock)\n- generated results/** excluded (except README)\n- production data/** excluded (except README + examples)\n- .codeocean/ and .github/ excluded from reverse\n- module contract validated by CI\n- auto-refresh keeps co/<module> fresh after main merges\n- mod/* branches rebase onto main automatically"]
+  ScopeCheck --> Guardrails
+  Guardrails --> ConfirmScope
+
+  classDef github fill:#e8f3ff,stroke:#2b6cb0,stroke-width:2px,color:#111827;
+  classDef local fill:#f3edff,stroke:#6b46c1,stroke-width:2px,color:#111827;
+  classDef export fill:#fff7e6,stroke:#c77900,stroke-width:2px,color:#111827;
+  classDef codeocean fill:#eef8f0,stroke:#2f855a,stroke-width:2px,color:#111827;
+  classDef action fill:#f7fafc,stroke:#4a5568,stroke-width:2px,color:#111827;
+  classDef danger fill:#ffe8e8,stroke:#c53030,stroke-width:2px,color:#111827;
+  classDef ci fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#111827;
+  classDef nochange fill:#f0f0f0,stroke:#9ca3af,stroke-width:1px,stroke-dasharray:5 5,color:#6b7280;
+  classDef promotion fill:#e6fffa,stroke:#319795,stroke-width:2px,color:#111827;
+  classDef refresh fill:#fff5f5,stroke:#e53e3e,stroke-width:1px,color:#111827;
+
+  class Main,ModBranch,LocalBranch,COBranch,COSyncBranch,PRLocal,PRCO,PRPromotion github;
+  class PullLocal,EditLocal,TestLocal,CommitLocal,PushLocal local;
+  class ExportRuntime,ExportWorkflow,ExportReview,PushCOBranch export;
+  class PullCO,EditCO,CommitWIP,CommitSync,PushFromCO codeocean;
+  class Trigger,EnsureMod,DuplicateCheck,FreshMod,ReverseSync,ScopeCheck,CommitSync2,OpenPR,PROpened,CheckSiblings,BlockOrPass,ReviewChanges,ConfirmScope,RunChecks,MergeMain,DeleteBranch,Guardrails action;
+  class ContractValidation,ChangedModules ci;
+  class DirectWarning danger;
+  class NoChanges nochange;
+  class ScheduleOrDispatch,FindAhead,CreatePromotionPR,RebaseMod promotion;
+  class MainPush,DetectChanged,OutboundRefresh,RefreshCommit refresh;

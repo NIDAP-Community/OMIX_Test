@@ -1,112 +1,51 @@
-name: Block Duplicate Co-Sync PRs
+name: "Block Duplicate CO-Sync PR"
 
 on:
   pull_request:
     types: [opened, reopened]
     branches:
-      - main
+      - 'mod/**'
 
 permissions:
   pull-requests: write
-  issues: write
-  contents: read
 
 jobs:
-  check-duplicate-cosync:
-    name: Check for other open co-sync PRs
+  check-duplicates:
     runs-on: ubuntu-latest
-
     if: startsWith(github.head_ref, 'co-sync/')
-
     steps:
-      - name: Extract module name from branch
-        id: parse
-        shell: bash
+      - name: Extract module from branch name
+        id: module
         run: |
-          branch="${{ github.head_ref }}"
-          without_prefix="${branch#co-sync/}"
-          module="$(echo "${without_prefix}" | sed 's/-[0-9]\{8\}-[0-9]\{6\}$//')"
-          echo "module=${module}" >> "${GITHUB_OUTPUT}"
-          echo "Detected module: ${module}"
+          # co-sync/volcano-20250611-143000 -> volcano
+          BRANCH="${{ github.head_ref }}"
+          MODULE=$(echo "$BRANCH" | sed 's|^co-sync/||' | sed 's|-[0-9]\{8\}-[0-9]\{6\}$||')
+          echo "name=$MODULE" >> "$GITHUB_OUTPUT"
 
-      - name: Check for any other open co-sync PRs targeting main
-        id: check
+      - name: Check for sibling co-sync PRs (same module)
+        id: siblings
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          CURRENT_PR: ${{ github.event.pull_request.number }}
-        shell: bash
         run: |
-          siblings="$(gh pr list \
-            --repo "${REPO}" \
-            --base main \
+          MODULE="${{ steps.module.outputs.name }}"
+          CURRENT_PR="${{ github.event.pull_request.number }}"
+
+          SIBLINGS=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
             --state open \
-            --json number,headRefName,title \
-            --jq \
-            --argjson current "${CURRENT_PR}" \
-            '[.[] | select(.headRefName | startswith("co-sync/")) | select(.number != $current)]')"
+            --json number,headRefName \
+            --jq "[.[] | select(.headRefName | startswith(\"co-sync/${MODULE}-\")) | select(.number != ${CURRENT_PR})] | length")
 
-          count="$(echo "${siblings}" | jq 'length')"
-          {
-            echo "siblings<<EOF"
-            echo "${siblings}"
-            echo "EOF"
-            echo "count=${count}"
-          } >> "${GITHUB_OUTPUT}"
+          echo "count=$SIBLINGS" >> "$GITHUB_OUTPUT"
 
-          echo "Found ${count} other co-sync PR(s)."
-
-      - name: Post warning comment and fail if duplicate found
-        if: steps.check.outputs.count != '0'
+      - name: Block if duplicate exists for same module
+        if: steps.siblings.outputs.count != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          CURRENT_PR: ${{ github.event.pull_request.number }}
-          MODULE: ${{ steps.parse.outputs.module }}
-          SIBLINGS: ${{ steps.check.outputs.siblings }}
-        shell: bash
         run: |
-          links="$(echo "${SIBLINGS}" | jq -r \
-            --arg repo "${REPO}" \
-            '.[] | "- #\(.number) (`\(.headRefName)`) — \(.title) — https://github.com/\($repo)/pull/\(.number)"')"
+          MODULE="${{ steps.module.outputs.name }}"
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --body "⚠️ **Blocked:** Another co-sync PR for module \`${MODULE}\` is already open. Please merge or close that PR first.
 
-          comment="$(cat <<COMMENT
-          ## Co-Sync PR Conflict Detected
-
-          This PR syncs changes for module \`${MODULE}\` into \`main\`, but the following co-sync PR(s) are already open:
-
-          ${links}
-
-          Do not merge this PR until the open co-sync PR(s) above are resolved.
-
-          ### Why this matters
-
-          Even if PRs touch different modules, they may have branched from a stale snapshot of \`main\`. Merging them in the wrong order can cause conflicts or hide changes that should have been reviewed together.
-
-          ### Recommended actions
-
-          1. Merge the existing open co-sync PR(s) first, then re-sync this module from a fresh \`main\`.
-          2. If this PR has the newer changes, close the conflicting PR(s) and confirm this branch is based on current \`main\`.
-          3. If all changes are needed, consolidate them into one \`co-sync/*\` branch.
-          COMMENT
-          )"
-
-          gh pr comment "${CURRENT_PR}" \
-            --repo "${REPO}" \
-            --body "${comment}"
-
-          echo "::error::One or more co-sync PRs are already open targeting main."
+          > Different modules can have concurrent co-sync PRs — this check only blocks duplicates for the *same* module."
           exit 1
-
-      - name: Post clean status comment
-        if: steps.check.outputs.count == '0'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          CURRENT_PR: ${{ github.event.pull_request.number }}
-          MODULE: ${{ steps.parse.outputs.module }}
-        shell: bash
-        run: |
-          gh pr comment "${CURRENT_PR}" \
-            --repo "${REPO}" \
-            --body "Co-sync conflict check passed for \`${MODULE}\`. No other open \`co-sync/*\` PRs target \`main\`."

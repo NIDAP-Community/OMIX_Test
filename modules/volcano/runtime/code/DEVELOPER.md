@@ -4,12 +4,12 @@ Technical implementation details for developers and maintainers.
 
 ## Architecture
 
-This capsule is a runtime bundle for enhanced volcano plots from differential-expression tables. It is sourced from `Volcano_Plot_Enhanced_v85.R` and runs the `volcano_plot_enhanced()` function.
+This capsule is a runtime bundle for enhanced volcano plots from differential-expression tables. It is sourced from `Volcano_Plot_Enhanced.R` and runs the `volcano_plot_enhanced()` function.
 
 ### Core Components
 
 - **Main entry point**: `/code/main.R` - CLI interface with optparse
-- **Plotting function**: `/code/functions/Volcano_Plot_Enhanced_v85.R` - Core visualization logic
+- **Plotting function**: `/code/functions/Volcano_Plot_Enhanced.R` - Core visualization logic
 - **Execution script**: `/code/run` - Bash driver for reproducible runs
 
 ## Input Specification
@@ -121,7 +121,7 @@ Uses `ggrepel::geom_text_repel()` to prevent label overlap.
 ├── main.R                        # CLI entry point
 ├── run                           # Bash execution script
 ├── functions/
-│   └── Volcano_Plot_Enhanced_v85.R  # Core plotting function
+│   └── Volcano_Plot_Enhanced.R      # Core plotting function
 └── DEVELOPER.md                  # This file
 
 /data/

@@ -1,0 +1,35 @@
+flowchart LR
+  subgraph MonoRepo["OMIX Monorepo - development"]
+    Main["main\n(monorepo layout)"]
+  end
+
+  subgraph DeployRepos["Per-Capsule Deploy Repos"]
+    R1["co-volcano repo\nmain = capsule root"]
+    R2["co-heatmap repo\nmain = capsule root"]
+    R3["co-pathway-gsva repo\nmain = capsule root"]
+    RN["co-... repo\nN repos for N capsules"]
+  end
+
+  subgraph CodeOcean["Code Ocean"]
+    Cap1["Capsule: Volcano"]
+    Cap2["Capsule: Heatmap"]
+    Cap3["Capsule: GSVA"]
+    CapN["Capsule: ..."]
+  end
+
+  Main -->|"syncweaver\npush"| R1
+  Main -->|"syncweaver\npush"| R2
+  Main -->|"syncweaver\npush"| R3
+  Main -->|"syncweaver\npush"| RN
+  R1 -->|"pulls main"| Cap1
+  R2 -->|"pulls main"| Cap2
+  R3 -->|"pulls main"| Cap3
+  RN -->|"pulls main"| CapN
+
+  classDef source fill:#f3edff,stroke:#6b46c1,stroke-width:2px,color:#111827;
+  classDef deploy fill:#fff7e6,stroke:#c77900,stroke-width:2px,color:#111827;
+  classDef capsule fill:#eef8f0,stroke:#2f855a,stroke-width:2px,color:#111827;
+
+  class Main source;
+  class R1,R2,R3,RN deploy;
+  class Cap1,Cap2,Cap3,CapN capsule;

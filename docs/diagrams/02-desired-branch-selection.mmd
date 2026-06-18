@@ -1,0 +1,25 @@
+flowchart LR
+  subgraph MonoRepo["OMIX Monorepo (github.com/NIDAP-Community/OMIX)"]
+    Main["main branch\n(monorepo layout)\ncore/ modules/ docs/"]
+    CoVolcano["co/volcano branch\n(capsule-root layout)\ncode/ environment/ data/"]
+    CoHeatmap["co/heatmap branch\n(capsule-root layout)\ncode/ environment/ data/"]
+    CoGSVA["co/pathway_gsva branch\n(capsule-root layout)\ncode/ environment/ data/"]
+  end
+
+  subgraph CodeOcean["Code Ocean (with branch selection)"]
+    Cap1["Capsule: Volcano Plot\nsource: co/volcano"]
+    Cap2["Capsule: Expression Heatmap\nsource: co/heatmap"]
+    Cap3["Capsule: GSVA Pathway\nsource: co/pathway_gsva"]
+  end
+
+  CoVolcano -->|"pulls co/volcano"| Cap1
+  CoHeatmap -->|"pulls co/heatmap"| Cap2
+  CoGSVA -->|"pulls co/pathway_gsva"| Cap3
+
+  classDef repo fill:#e8f3ff,stroke:#2b6cb0,stroke-width:2px,color:#111827;
+  classDef capsule fill:#eef8f0,stroke:#2f855a,stroke-width:2px,color:#111827;
+  classDef main fill:#f3edff,stroke:#6b46c1,stroke-width:2px,color:#111827;
+
+  class Main main;
+  class CoVolcano,CoHeatmap,CoGSVA repo;
+  class Cap1,Cap2,Cap3 capsule;

@@ -49,5 +49,6 @@ jobs:
         with:
           context: starter-environments/${{ matrix.environment }}
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-          tags: ghcr.io/nidap-community/omix-${{ matrix.environment }}:latest
-
+          tags: |
+            ghcr.io/nidap-community/omix-${{ matrix.environment }}:latest
+            ghcr.io/nidap-community/omix-${{ matrix.environment }}:${{ github.sha }}

@@ -1,0 +1,94 @@
+name: "Auto-Refresh CO Export"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'modules/*/runtime/**'
+      - 'core/**'
+      - 'starter-environments/**'
+
+permissions:
+  contents: write
+
+jobs:
+  detect-and-refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect affected modules
+        id: detect
+        run: |
+          # Direct module runtime changes
+          DIRECT=$(git diff --name-only HEAD~1 HEAD -- 'modules/*/runtime/' \
+            | sed -n 's|^modules/\([^/]*\)/runtime/.*|\1|p' \
+            | sort -u)
+
+          # If core/ or starter-environments/ changed, ALL modules with co/ branches need refresh
+          SHARED_CHANGED=$(git diff --name-only HEAD~1 HEAD -- 'core/' 'starter-environments/' | head -1)
+
+          if [ -n "$SHARED_CHANGED" ]; then
+            # Find all modules that have a co/ branch
+            ALL_CO=$(git branch -r --list 'origin/co/*' | sed 's|origin/co/||' | tr -d ' ')
+            MODULES=$(echo -e "${DIRECT}\n${ALL_CO}" | sort -u | grep -v '^$')
+          else
+            MODULES="$DIRECT"
+          fi
+
+          if [ -z "$MODULES" ]; then
+            echo "No modules to refresh."
+            echo "has_modules=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_modules=true" >> "$GITHUB_OUTPUT"
+            echo "$MODULES" > /tmp/modules.txt
+            echo "Modules to refresh:"
+            cat /tmp/modules.txt
+          fi
+
+      - name: Refresh co/<module> branches
+        if: steps.detect.outputs.has_modules == 'true'
+        run: |
+          while IFS= read -r MODULE; do
+            CO_BRANCH="co/$MODULE"
+
+            # Check if co/ branch exists
+            if ! git ls-remote --exit-code origin "refs/heads/$CO_BRANCH" > /dev/null 2>&1; then
+              echo "No co/ branch for $MODULE, skipping."
+              continue
+            fi
+
+            echo "Refreshing $CO_BRANCH..."
+
+            # Create a temp directory for the export
+            EXPORT_DIR=$(mktemp -d)
+
+            # Run outbound sync
+            bash scripts/code_ocean_sync.sh outbound "$MODULE" "$EXPORT_DIR" --apply
+
+            # Switch to co/ branch and update
+            git checkout "$CO_BRANCH"
+
+            # Copy exported files (excluding .git)
+            rsync -a --delete --exclude='.git' "$EXPORT_DIR/" ./
+
+            # Commit without [sync] to prevent triggering reverse sync
+            if ! git diff --quiet || ! git diff --cached --quiet; then
+              git add -A
+              git commit -m "refresh(${MODULE}): auto-export from main
+
+              Triggered by push to main.
+              This commit does NOT contain [sync] — no reverse sync will fire."
+              git push origin "$CO_BRANCH"
+            else
+              echo "No changes to export for $MODULE."
+            fi
+
+            # Return to main for next iteration
+            git checkout main
+
+            rm -rf "$EXPORT_DIR"
+          done < /tmp/modules.txt

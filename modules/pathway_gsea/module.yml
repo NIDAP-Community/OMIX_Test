@@ -1,5 +1,6 @@
 name: pathway_gsea
 display_name: GSEA Capsule
+version: 0.1.0
 module_type: pathway
 starter_environment: r-pathway
 owner: TODO
@@ -10,4 +11,3 @@ outputs_schema: schemas/outputs.schema.json
 capsule:
   image: ghcr.io/nidap-community/omix-pathway-gsea:latest
   base_image: ghcr.io/nidap-community/omix-r-pathway:latest
-

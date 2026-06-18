@@ -1,5 +1,6 @@
 name: pathway_l2p_multi
 display_name: L2P Multi
+version: 0.1.1
 module_type: pathway
 starter_environment: r-pathway
 owner: TODO

@@ -1,0 +1,24 @@
+flowchart TD
+  subgraph Trigger["Release Trigger"]
+    Tag["GitHub tag on co/volcano\ne.g. v1.2.0"]
+  end
+
+  subgraph API["Code Ocean API (desired endpoints)"]
+    Pull["POST /capsules/{id}/pull\n  repo: OMIX\n  branch: co/volcano\n  ref: v1.2.0"]
+    Run["POST /capsules/{id}/run\n  reproducible execution\n  validates capsule works"]
+    Publish["POST /capsules/{id}/publish\n  creates new capsule version\n  linked to source tag"]
+  end
+
+  subgraph Result["Outcome"]
+    Version["OK Capsule v1.2.0 published\nOK Linked to exact source commit\nOK Reproducible run verified\nOK No manual intervention"]
+  end
+
+  Tag --> Pull --> Run --> Publish --> Version
+
+  classDef trigger fill:#e8f3ff,stroke:#2b6cb0,stroke-width:2px,color:#111827;
+  classDef api fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#111827;
+  classDef result fill:#eef8f0,stroke:#2f855a,stroke-width:2px,color:#111827;
+
+  class Tag trigger;
+  class Pull,Run,Publish api;
+  class Version result;
