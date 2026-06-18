@@ -1,0 +1,181 @@
+name: "Auto CO-Sync PR"
+
+on:
+  push:
+    branches:
+      - 'co/**'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  reverse-sync:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, '[sync]')
+    steps:
+      - name: Extract module name
+        id: module
+        run: |
+          # co/volcano -> volcano, co/pathway_l2p_single -> pathway_l2p_single
+          MODULE="${GITHUB_REF_NAME#co/}"
+          echo "name=$MODULE" >> "$GITHUB_OUTPUT"
+          echo "mod_branch=mod/$MODULE" >> "$GITHUB_OUTPUT"
+          echo "timestamp=$(date -u +%Y%m%d-%H%M%S)" >> "$GITHUB_OUTPUT"
+
+      - name: Check for duplicate co-sync PR (same module only)
+        id: dupcheck
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_PRS=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --head "co-sync/${{ steps.module.outputs.name }}" \
+            --json number,headRefName \
+            --jq 'length')
+          if [ "$OPEN_PRS" -gt 0 ]; then
+            echo "::warning::Another co-sync PR for module '${{ steps.module.outputs.name }}' is already open. Aborting."
+            echo "duplicate=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "duplicate=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Abort if duplicate
+        if: steps.dupcheck.outputs.duplicate == 'true'
+        run: exit 0
+
+      - name: Checkout repository
+        if: steps.dupcheck.outputs.duplicate == 'false'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure mod/<module> branch exists
+        if: steps.dupcheck.outputs.duplicate == 'false'
+        run: |
+          MOD_BRANCH="${{ steps.module.outputs.mod_branch }}"
+          if ! git ls-remote --exit-code origin "refs/heads/$MOD_BRANCH" > /dev/null 2>&1; then
+            git checkout -b "$MOD_BRANCH" origin/main
+            git push origin "$MOD_BRANCH"
+          fi
+
+      - name: Checkout mod/<module> and prepare worktree
+        if: steps.dupcheck.outputs.duplicate == 'false'
+        run: |
+          MOD_BRANCH="${{ steps.module.outputs.mod_branch }}"
+          MODULE="${{ steps.module.outputs.name }}"
+
+          git checkout "$MOD_BRANCH"
+          git worktree add ../co-worktree "origin/co/$MODULE"
+
+      - name: Run reverse sync
+        if: steps.dupcheck.outputs.duplicate == 'false'
+        id: sync
+        run: |
+          MODULE="${{ steps.module.outputs.name }}"
+          bash scripts/code_ocean_sync.sh reverse "$MODULE" ../co-worktree --apply
+
+          # Check if there are staged changes
+          if git diff --cached --quiet; then
+            echo "changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Scope check — changes must stay in modules/<module>/runtime/
+        if: steps.dupcheck.outputs.duplicate == 'false' && steps.sync.outputs.changes == 'true'
+        run: |
+          MODULE="${{ steps.module.outputs.name }}"
+          ESCAPED=$(git diff --cached --name-only | grep -v "^modules/${MODULE}/runtime/" || true)
+          if [ -n "$ESCAPED" ]; then
+            echo "::error::Changes escape modules/${MODULE}/runtime/:"
+            echo "$ESCAPED"
+            exit 1
+          fi
+
+      - name: Assess diff size for fast-merge eligibility
+        if: steps.dupcheck.outputs.duplicate == 'false' && steps.sync.outputs.changes == 'true'
+        id: diffsize
+        run: |
+          MODULE="${{ steps.module.outputs.name }}"
+          LINES_CHANGED=$(git diff --cached --stat | tail -1 | grep -oP '\d+(?= insertion)' || echo 0)
+          LINES_DELETED=$(git diff --cached --stat | tail -1 | grep -oP '\d+(?= deletion)' || echo 0)
+          TOTAL=$((LINES_CHANGED + LINES_DELETED))
+
+          # Check if any environment or schema files changed
+          ENV_CHANGES=$(git diff --cached --name-only | grep -E "(environment/|MANIFEST\.yaml|module\.yaml)" || true)
+
+          if [ "$TOTAL" -le 50 ] && [ -z "$ENV_CHANGES" ]; then
+            echo "fast_merge=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "fast_merge=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "total_lines=$TOTAL" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and create sync branch
+        if: steps.dupcheck.outputs.duplicate == 'false' && steps.sync.outputs.changes == 'true'
+        run: |
+          MODULE="${{ steps.module.outputs.name }}"
+          TIMESTAMP="${{ steps.module.outputs.timestamp }}"
+          SYNC_BRANCH="co-sync/${MODULE}-${TIMESTAMP}"
+
+          git checkout -b "$SYNC_BRANCH"
+          git commit -m "sync(${MODULE}): reverse sync from Code Ocean
+
+          Source: co/${MODULE}
+          Trigger: ${{ github.event.head_commit.message }}
+          Lines changed: ${{ steps.diffsize.outputs.total_lines }}"
+
+          git push origin "$SYNC_BRANCH"
+          echo "SYNC_BRANCH=$SYNC_BRANCH" >> "$GITHUB_ENV"
+
+      - name: Open PR targeting mod/<module>
+        if: steps.dupcheck.outputs.duplicate == 'false' && steps.sync.outputs.changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          MODULE="${{ steps.module.outputs.name }}"
+          MOD_BRANCH="${{ steps.module.outputs.mod_branch }}"
+          FAST="${{ steps.diffsize.outputs.fast_merge }}"
+
+          PR_BODY="## Reverse sync from Code Ocean
+
+          **Module:** \`${MODULE}\`
+          **Source branch:** \`co/${MODULE}\`
+          **Target:** \`${MOD_BRANCH}\`
+          **Lines changed:** ${{ steps.diffsize.outputs.total_lines }}
+          **Fast-merge eligible:** ${FAST}
+
+          ### Scope
+          All changes are confined to \`modules/${MODULE}/runtime/\`.
+
+          ### Automated checks
+          - [ ] Contract validation passes
+          - [ ] Smoke tests pass
+          - [ ] No production data or generated results included"
+
+          if [ "$FAST" = "true" ]; then
+            gh pr create \
+              --base "$MOD_BRANCH" \
+              --head "$SYNC_BRANCH" \
+              --title "sync(${MODULE}): fast-merge reverse sync" \
+              --body "$PR_BODY" \
+              --label "auto-sync,fast-merge"
+            # Enable auto-merge immediately for fast-merge eligible PRs
+            PR_NUMBER=$(gh pr list --head "$SYNC_BRANCH" --json number --jq '.[0].number')
+            gh pr merge "$PR_NUMBER" --auto --squash
+          else
+            gh pr create \
+              --base "$MOD_BRANCH" \
+              --head "$SYNC_BRANCH" \
+              --title "sync(${MODULE}): reverse sync from Code Ocean" \
+              --body "$PR_BODY" \
+              --label "auto-sync"
+            PR_NUMBER=$(gh pr list --head "$SYNC_BRANCH" --json number --jq '.[0].number')
+            gh pr merge "$PR_NUMBER" --auto --squash
+          fi
+
+      - name: Exit cleanly if no changes
+        if: steps.dupcheck.outputs.duplicate == 'false' && steps.sync.outputs.changes == 'false'
+        run: echo "No file changes after filtering. Nothing to sync."
