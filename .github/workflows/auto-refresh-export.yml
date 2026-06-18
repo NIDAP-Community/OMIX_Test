@@ -18,7 +18,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Detect affected modules
         id: detect
@@ -55,7 +60,7 @@ jobs:
           while IFS= read -r MODULE; do
             CO_BRANCH="co/$MODULE"
 
-            # Check if co/ branch exists
+            # Check if co/ branch exists on remote
             if ! git ls-remote --exit-code origin "refs/heads/$CO_BRANCH" > /dev/null 2>&1; then
               echo "No co/ branch for $MODULE, skipping."
               continue
@@ -66,11 +71,12 @@ jobs:
             # Create a temp directory for the export
             EXPORT_DIR=$(mktemp -d)
 
-            # Run outbound sync
+            # Run outbound sync from main working tree
             bash scripts/code_ocean_sync.sh outbound "$MODULE" "$EXPORT_DIR" --apply
 
-            # Switch to co/ branch and update
-            git checkout "$CO_BRANCH"
+            # Fetch and checkout the co/ branch (orphan history, separate from main)
+            git fetch origin "$CO_BRANCH"
+            git checkout -B "$CO_BRANCH" "origin/$CO_BRANCH"
 
             # Copy exported files (excluding .git)
             rsync -a --delete --exclude='.git' "$EXPORT_DIR/" ./
@@ -80,9 +86,10 @@ jobs:
               git add -A
               git commit -m "refresh(${MODULE}): auto-export from main
 
-              Triggered by push to main.
-              This commit does NOT contain [sync] — no reverse sync will fire."
+Triggered by push to main.
+This commit does NOT contain [sync] — no reverse sync will fire."
               git push origin "$CO_BRANCH"
+              echo "Pushed update to $CO_BRANCH."
             else
               echo "No changes to export for $MODULE."
             fi
