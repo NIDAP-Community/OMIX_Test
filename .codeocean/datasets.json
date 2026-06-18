@@ -1,9 +1,0 @@
-{
-	"version": 1,
-	"attached_datasets": [
-		{
-			"id": "5f76dab7-173e-4a24-af60-88160d69e1b7",
-			"mount": "example_deg"
-		}
-	]
-}
