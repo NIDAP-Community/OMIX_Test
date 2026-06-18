@@ -1,53 +1,63 @@
-name: Module CI
+name: "Module CI"
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
+    branches: [main, 'mod/**']
+    paths:
+      - 'modules/**'
+      - 'core/**'
+      - 'tests/**'
+      - 'scripts/check_module_versioning.R'
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
-  module-contract:
-    name: Validate module contracts
+  contract-validation:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up R
-        uses: r-lib/actions/setup-r@v2
-
-      - name: Validate module manifests and folders
-        run: Rscript tests/test-module-contract.R
-
-  changed-module-summary:
-    name: Report changed modules
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: List changed modules
-        shell: bash
+      - name: Detect changed modules
+        id: changed
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            base_sha="${{ github.event.pull_request.base.sha }}"
+          BASE="${{ github.event.pull_request.base.sha }}"
+          MODULES=$(git diff --name-only "$BASE" HEAD -- 'modules/**' \
+            | sed -n 's|^modules/\([^/]*\)/.*|\1|p' \
+            | sort -u)
+
+          if [ -z "$MODULES" ]; then
+            echo "No module changes detected."
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else
-            base_sha="${{ github.event.before }}"
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "$MODULES" > /tmp/changed_modules.txt
+            echo "Changed modules: $MODULES"
           fi
 
-          if [[ -z "$base_sha" || "$base_sha" == "0000000000000000000000000000000000000000" ]]; then
-            base_sha="$(git rev-list --max-parents=0 HEAD)"
-          fi
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
 
-          git diff --name-only "$base_sha" HEAD \
-            | awk -F/ '/^modules\/[^/]+\// {print $2}' \
-            | sort -u \
-            | tee changed-modules.txt
+      - name: Run contract validation
+        run: Rscript tests/test-module-contract.R
 
-          if [[ ! -s changed-modules.txt ]]; then
-            echo "No module-specific changes detected."
-          fi
+      - name: Check module versioning
+        if: steps.changed.outputs.has_changes == 'true'
+        run: Rscript scripts/check_module_versioning.R "${{ github.event.pull_request.base.sha }}"
 
+      - name: Run smoke tests for changed modules
+        if: steps.changed.outputs.has_changes == 'true'
+        run: |
+          while IFS= read -r MODULE; do
+            TEST_SCRIPT="modules/${MODULE}/runtime/tests/test_run_small.sh"
+            if [ -f "$TEST_SCRIPT" ]; then
+              echo "Running smoke test for $MODULE..."
+              bash "$TEST_SCRIPT"
+            else
+              echo "No smoke test found for $MODULE, skipping."
+            fi
+          done < /tmp/changed_modules.txt

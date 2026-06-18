@@ -1,0 +1,126 @@
+name: "Promote mod/* to main"
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Daily at 6:00 UTC
+  workflow_dispatch:
+    inputs:
+      module:
+        description: 'Specific module to promote (leave empty for all)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find mod/* branches ahead of main
+        id: branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          FILTER="${{ inputs.module }}"
+          BRANCHES=()
+
+          for BRANCH in $(git branch -r --list 'origin/mod/*' | sed 's|origin/||'); do
+            # Check if branch is ahead of main
+            AHEAD=$(git rev-list --count "origin/main..origin/$BRANCH")
+            if [ "$AHEAD" -gt 0 ]; then
+              MODULE="${BRANCH#mod/}"
+              if [ -z "$FILTER" ] || [ "$MODULE" = "$FILTER" ]; then
+                BRANCHES+=("$BRANCH")
+              fi
+            fi
+          done
+
+          if [ ${#BRANCHES[@]} -eq 0 ]; then
+            echo "No mod/* branches ahead of main."
+            echo "has_branches=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_branches=true" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "${BRANCHES[@]}" > /tmp/branches.txt
+          fi
+
+      - name: Create promotion PRs
+        if: steps.branches.outputs.has_branches == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          while IFS= read -r BRANCH; do
+            MODULE="${BRANCH#mod/}"
+
+            # Skip if a promotion PR already exists
+            EXISTING=$(gh pr list \
+              --repo "$GITHUB_REPOSITORY" \
+              --state open \
+              --head "$BRANCH" \
+              --base main \
+              --json number \
+              --jq 'length')
+
+            if [ "$EXISTING" -gt 0 ]; then
+              echo "Promotion PR already open for $BRANCH, skipping."
+              continue
+            fi
+
+            # Gather commit log
+            LOG=$(git log --oneline "origin/main..origin/$BRANCH" | head -20)
+
+            PR_BODY="## Promotion: \`${BRANCH}\` → \`main\`
+
+          **Module:** \`${MODULE}\`
+          **Commits ahead of main:** $(git rev-list --count origin/main..origin/$BRANCH)
+
+          ### Recent commits
+          \`\`\`
+          ${LOG}
+          \`\`\`
+
+          ### Review checklist
+          - [ ] No production data included
+          - [ ] No generated results (results/**) included
+          - [ ] No .codeocean metadata
+          - [ ] Module contract passes
+          - [ ] Smoke tests pass
+          - [ ] Changes scoped to \`modules/${MODULE}/runtime/\`"
+
+            gh pr create \
+              --base main \
+              --head "$BRANCH" \
+              --title "promote(${MODULE}): merge mod/${MODULE} to main" \
+              --body "$PR_BODY" \
+              --label "promotion"
+
+          done < /tmp/branches.txt
+
+  rebase-after-merge:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    needs: promote
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Rebase mod/* branches onto main
+        run: |
+          for BRANCH in $(git branch -r --list 'origin/mod/*' | sed 's|origin/||'); do
+            echo "Rebasing $BRANCH onto main..."
+            git checkout "$BRANCH"
+            git rebase origin/main || {
+              echo "::warning::Rebase failed for $BRANCH — skipping (manual resolution needed)"
+              git rebase --abort
+              continue
+            }
+            git push origin "$BRANCH" --force-with-lease
+          done
