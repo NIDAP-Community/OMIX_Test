@@ -18,7 +18,7 @@ Code Ocean users typically launch this through the platform GUI; this command is
 ./tests/test_run_small.sh
 ```
 
-The dry run validates the runtime layout, parameter JSON, DEG table columns, and result-writing behavior without calling `volcano_plot_enhanced()`.
+The dry run executes the full pipeline on example data at reduced resolution and verifies the output PNG is produced.
 
 To run the example input directly:
 

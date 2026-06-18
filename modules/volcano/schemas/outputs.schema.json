@@ -2,6 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "volcano outputs",
   "type": "object",
+  "properties": {
+    "volcano_plot_png": {
+      "type": "string",
+      "description": "Path to the generated volcano plot PNG file."
+    }
+  },
   "additionalProperties": true
 }
 

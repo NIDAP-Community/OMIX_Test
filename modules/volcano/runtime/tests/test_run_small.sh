@@ -4,6 +4,9 @@ set -euo pipefail
 runtime_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 results_dir="${runtime_root}/results"
 
+# Ensure dependencies are installed
+bash "${runtime_root}/environment/postInstall.sh"
+
 cleanup() {
   find "${results_dir}" -maxdepth 1 -type f -name 'volcano_plot*.png' -delete
 }

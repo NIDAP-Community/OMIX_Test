@@ -2,6 +2,207 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "volcano inputs",
   "type": "object",
-  "additionalProperties": true
+  "required": ["deg_table"],
+  "properties": {
+    "deg_table": {
+      "type": "string",
+      "description": "Path to DEG table CSV file."
+    },
+    "pvalue_type": {
+      "type": "string",
+      "enum": ["nominal", "adjusted"],
+      "default": "nominal",
+      "description": "Whether to prefer nominal or adjusted p-value columns."
+    },
+    "column_with_feature_id": {
+      "type": "string",
+      "description": "Column containing feature IDs (e.g. gene names). Auto-inferred if omitted."
+    },
+    "significance_column": {
+      "type": "string",
+      "description": "P-value column name from the DEG table. Auto-inferred if omitted."
+    },
+    "log2_fold_change_column": {
+      "type": "string",
+      "description": "Log2 fold-change column name from the DEG table. Auto-inferred if omitted."
+    },
+    "p_value_threshold": {
+      "type": "number",
+      "default": 0.05,
+      "description": "Significance threshold for the p-value."
+    },
+    "log2_fold_change_threshold": {
+      "type": "number",
+      "default": 1.0,
+      "description": "Minimum absolute log2 fold-change to be considered biologically significant."
+    },
+    "choose_feature_to_label_by": {
+      "type": "string",
+      "enum": ["p-value", "fold-change"],
+      "default": "p-value",
+      "description": "Metric used to rank features for labeling."
+    },
+    "number_of_features_to_label": {
+      "type": "integer",
+      "default": 30,
+      "description": "Number of top features to label on the plot."
+    },
+    "label_only_my_feature_list": {
+      "type": "string",
+      "enum": ["true", "false"],
+      "default": "false",
+      "description": "If true, label only features in my_feature_list."
+    },
+    "my_feature_list": {
+      "type": "string",
+      "default": "",
+      "description": "Comma- or space-separated list of features to label."
+    },
+    "top_genes_labeled_only_if_passing_thresholds": {
+      "type": "string",
+      "enum": ["true", "false"],
+      "default": "true",
+      "description": "If true, only genes passing thresholds are labeled."
+    },
+    "label_size": {
+      "type": "number",
+      "default": 4,
+      "description": "Text size for feature labels."
+    },
+    "label_box_padding": {
+      "type": "number",
+      "default": 1,
+      "description": "Padding around label boxes (ggrepel box.padding)."
+    },
+    "label_force": {
+      "type": "number",
+      "default": 1,
+      "description": "Repulsion force for label placement (ggrepel force)."
+    },
+    "label_max_overlaps": {
+      "type": "number",
+      "default": null,
+      "description": "Maximum allowed label overlaps. Default Inf (no limit)."
+    },
+    "use_custom_axis_label": {
+      "type": "string",
+      "enum": ["true", "false"],
+      "default": "false",
+      "description": "Whether to use custom axis labels."
+    },
+    "custom_significance_label": {
+      "type": "string",
+      "default": "p-value",
+      "description": "Custom y-axis label text."
+    },
+    "custom_log_fold_change_label": {
+      "type": "string",
+      "default": "log2FC",
+      "description": "Custom x-axis label text."
+    },
+    "plot_title": {
+      "type": "string",
+      "default": "Volcano Plot",
+      "description": "Title for the volcano plot."
+    },
+    "plot_subtitle": {
+      "type": "string",
+      "default": "",
+      "description": "Subtitle for the volcano plot."
+    },
+    "y_limit": {
+      "type": "number",
+      "default": 0,
+      "description": "Maximum y-axis value. 0 for automatic scaling."
+    },
+    "use_auto_axis_capping": {
+      "type": "string",
+      "enum": ["true", "false"],
+      "default": "true",
+      "description": "Automatically cap axis limits using quantiles."
+    },
+    "auto_axis_capping_quantile": {
+      "type": "number",
+      "default": 0.9999,
+      "description": "Quantile for automatic axis capping (0.5 to 1)."
+    },
+    "auto_axis_capping_symmetric_x": {
+      "type": "string",
+      "enum": ["true", "false"],
+      "default": "true",
+      "description": "Use symmetric x-axis limits when auto-capping."
+    },
+    "custom_x_axis_limits": {
+      "type": "string",
+      "default": "",
+      "description": "Custom x-axis limits. One number for symmetric, two comma-separated for asymmetric."
+    },
+    "x_limit_padding": {
+      "type": "number",
+      "default": 0,
+      "description": "Additional units added to x-axis limits."
+    },
+    "y_limit_padding": {
+      "type": "number",
+      "default": 0,
+      "description": "Additional units added to y-axis limits."
+    },
+    "plot_title_size": {
+      "type": "number",
+      "default": 16,
+      "description": "Font size for the plot title."
+    },
+    "axis_title_size": {
+      "type": "number",
+      "default": 14,
+      "description": "Font size for axis titles."
+    },
+    "axis_text_size": {
+      "type": "number",
+      "default": 12,
+      "description": "Font size for axis tick labels."
+    },
+    "point_size": {
+      "type": "number",
+      "default": 2,
+      "description": "Size of points on the volcano plot."
+    },
+    "image_width": {
+      "type": "integer",
+      "default": 3000,
+      "description": "Output image width in pixels."
+    },
+    "image_height": {
+      "type": "integer",
+      "default": 3000,
+      "description": "Output image height in pixels."
+    },
+    "resolution_dpi_": {
+      "type": "integer",
+      "default": 300,
+      "description": "Output image resolution in DPI."
+    },
+    "color_not_significant": {
+      "type": "string",
+      "default": "gray",
+      "description": "Color for non-significant points."
+    },
+    "color_fold_change_only": {
+      "type": "string",
+      "default": "orange",
+      "description": "Color for points with fold-change only."
+    },
+    "color_significant_only": {
+      "type": "string",
+      "default": "green4",
+      "description": "Color for points with significance only."
+    },
+    "color_significant_and_fold_change": {
+      "type": "string",
+      "default": "red3",
+      "description": "Color for points with both significance and fold-change."
+    }
+  },
+  "additionalProperties": false
 }
 

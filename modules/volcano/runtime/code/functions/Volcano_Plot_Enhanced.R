@@ -169,17 +169,11 @@ volcano_plot_enhanced <- function(
   color_significant_only = "green4",
   color_significant_and_fold_change = "red3"
 ) {
-  library(dplyr)
-  library(ggplot2)
-  library(ggrepel)
-  library(stringr)
-  library(tidyr)
-
   if (is.character(deg_table) && length(deg_table) == 1) {
     if (!file.exists(deg_table)) {
       stop("ERROR: `deg_table` file does not exist: ", deg_table)
     }
-    deg_table <- read.delim(
+    deg_table <- read.csv(
       deg_table,
       check.names = FALSE,
       stringsAsFactors = FALSE
@@ -606,8 +600,6 @@ volcano_plot_enhanced <- function(
         legend.text = ggplot2::element_text(size = 11),
         legend.position = "top"
       )
-
-    print(plot_obj)
 
     width_in <- image_width / resolution_dpi_
     height_in <- image_height / resolution_dpi_
