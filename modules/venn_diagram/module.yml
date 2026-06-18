@@ -1,5 +1,6 @@
 name: venn_diagram
 display_name: Venn Diagram Capsule
+version: 0.1.0
 module_type: visualization
 starter_environment: r-visualization
 owner: TODO
@@ -10,4 +11,3 @@ outputs_schema: schemas/outputs.schema.json
 capsule:
   image: ghcr.io/nidap-community/omix-venn-diagram:latest
   base_image: ghcr.io/nidap-community/omix-r-visualization:latest
-
