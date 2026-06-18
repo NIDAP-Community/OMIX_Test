@@ -47,5 +47,8 @@ data/
 *.sif
 *.tar
 
-# Office temp/lock files
+# Office files (presentations, documents, temp/lock files)
+*.pptx
+*.docx
 ~\$*
+*_Slides.md
