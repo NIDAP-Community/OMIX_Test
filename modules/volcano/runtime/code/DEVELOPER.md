@@ -45,41 +45,59 @@ runtime/
 
 ```
 runtime/
-├── Dockerfile                      # Standalone image (rocker base, no CO deps)
 └── tests/
     └── test_run_small.sh           # Smoke test (runs postInstall.sh + pipeline)
 ```
 
-## Building the Container
+## Runtime Environment
 
-### For HPC (standalone, no Code Ocean)
+All visualization modules share a single container image:
+`ghcr.io/nidap-community/omix-r-visualization:latest`
 
-From `modules/volcano/runtime/`:
+This image is:
+- Built from `starter-environments/r-visualization/Dockerfile` (pinned package versions)
+- Published to GHCR on merge to `main`
+- Used by Code Ocean capsules as their runtime environment
+- Pulled by HPC users via `apptainer pull`
+
+**There is no per-module Dockerfile.** The shared image contains all packages for
+all visualization modules. Module code is bind-mounted at runtime, not baked in.
+
+### For HPC
 
 ```bash
-# Build Docker image
-docker build -t omix-volcano:latest .
+# Pull the shared image (one time)
+apptainer pull docker://ghcr.io/nidap-community/omix-r-visualization:latest
 
-# Convert to Apptainer/Singularity SIF for HPC
-apptainer build omix-volcano.sif docker-daemon://omix-volcano:latest
+# Run volcano
+cd modules/volcano/runtime
+apptainer exec --cleanenv \
+  --bind "$PWD:/work" \
+  --bind "$PWD/results:/results" \
+  /path/to/omix-r-visualization_latest.sif \
+  bash /work/run.sh --deg_table /data/input.csv
 ```
 
 ### For Code Ocean
 
-The `environment/Dockerfile` is used by the Code Ocean build system. It references
-`$REGISTRY_HOST/codeocean/r-studio:...` as its base and is not usable standalone.
+The `environment/Dockerfile` is a Code Ocean build artifact that installs the same
+pinned packages into CO's base image. It exists for CO's build system but produces
+an equivalent environment to the shared starter image.
 
 ## Running on HPC
 
-### With the standalone container
+### With the shared container
 
 ```bash
-# Bind your DEG results and an output directory
+cd modules/volcano/runtime
+mkdir -p results
+
 apptainer exec --cleanenv \
+  --bind "$PWD:/work" \
   --bind /path/to/deg_results.csv:/data/input.csv \
-  --bind ./results:/results \
-  omix-volcano.sif \
-  bash /run.sh \
+  --bind "$PWD/results:/results" \
+  /path/to/omix-r-visualization_latest.sif \
+  bash /work/run.sh \
     --deg_table /data/input.csv \
     --pvalue_type adjusted \
     --significance_column Treatment_vs_Control_adjpval \

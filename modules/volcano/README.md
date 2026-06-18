@@ -66,18 +66,42 @@ Generated outputs are written to `runtime/results/` locally. See `runtime/docs/u
 
 ### Singularity or Apptainer on HPC
 
-Use a module-specific image, or another image that contains the packages declared by `runtime/environment/`. Bind the checked-out runtime into the container and run the same `run.sh` entrypoint:
+All visualization modules share the `r-visualization` runtime environment. Pull it once and reuse across modules:
+
+```bash
+# Pull the shared environment (one time)
+apptainer pull docker://ghcr.io/nidap-community/omix-r-visualization:latest
+```
+
+Then bind-mount the module code and your data into the container:
 
 ```bash
 cd modules/volcano/runtime
 mkdir -p results
 
-IMAGE=/path/to/omix-volcano.sif
+apptainer exec --cleanenv \
+  --bind "$PWD:/work" \
+  --bind /path/to/your/deg_results.csv:/data/input.csv \
+  --bind "$PWD/results:/results" \
+  /path/to/omix-r-visualization_latest.sif \
+  bash /work/run.sh \
+    --deg_table /data/input.csv \
+    --pvalue_type adjusted \
+    --image_width 3000 \
+    --image_height 3000 \
+    --resolution_dpi_ 300
+```
+
+To run the included example data:
+
+```bash
+cd modules/volcano/runtime
+mkdir -p results
 
 apptainer exec --cleanenv \
   --bind "$PWD:/work" \
   --bind "$PWD/results:/results" \
-  "$IMAGE" \
+  /path/to/omix-r-visualization_latest.sif \
   bash /work/run.sh \
     --deg_table /work/data/example_inputs/deg_table.csv \
     --pvalue_type nominal \
@@ -90,3 +114,5 @@ apptainer exec --cleanenv \
 ```
 
 If your HPC site uses the `singularity` command name instead of `apptainer`, replace `apptainer exec` with `singularity exec`.
+
+> **Note:** The same `omix-r-visualization` image is used by Code Ocean capsules, ensuring identical results between CO and HPC runs.
