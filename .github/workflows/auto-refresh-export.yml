@@ -29,20 +29,24 @@ jobs:
       - name: Detect affected modules
         id: detect
         run: |
-          # Direct module runtime changes
-          DIRECT=$(git diff --name-only HEAD~1 HEAD -- 'modules/*/runtime/' \
-            | sed -n 's|^modules/\([^/]*\)/runtime/.*|\1|p' \
-            | sort -u)
-
-          # If core/ or starter-environments/ changed, ALL modules with co/ branches need refresh
-          SHARED_CHANGED=$(git diff --name-only HEAD~1 HEAD -- 'core/' 'starter-environments/' | head -1)
-
-          if [ -n "$SHARED_CHANGED" ]; then
-            # Find all modules that have a co/ branch
-            ALL_CO=$(git branch -r --list 'origin/co/*' | sed 's|origin/co/||' | tr -d ' ')
-            MODULES=$(echo -e "${DIRECT}\n${ALL_CO}" | sort -u | grep -v '^$')
+          # On manual dispatch, refresh ALL modules with co/ branches
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            MODULES=$(git branch -r --list 'origin/co/*' | sed 's|origin/co/||' | tr -d ' ' | sort -u)
           else
-            MODULES="$DIRECT"
+            # Direct module runtime changes
+            DIRECT=$(git diff --name-only HEAD~1 HEAD -- 'modules/*/runtime/' \
+              | sed -n 's|^modules/\([^/]*\)/runtime/.*|\1|p' \
+              | sort -u)
+
+            # If core/ or starter-environments/ changed, ALL modules with co/ branches need refresh
+            SHARED_CHANGED=$(git diff --name-only HEAD~1 HEAD -- 'core/' 'starter-environments/' | head -1)
+
+            if [ -n "$SHARED_CHANGED" ]; then
+              ALL_CO=$(git branch -r --list 'origin/co/*' | sed 's|origin/co/||' | tr -d ' ')
+              MODULES=$(echo -e "${DIRECT}\n${ALL_CO}" | sort -u | grep -v '^$')
+            else
+              MODULES="$DIRECT"
+            fi
           fi
 
           if [ -z "$MODULES" ]; then
