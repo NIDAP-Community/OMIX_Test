@@ -83,8 +83,8 @@ jobs:
             git fetch origin "$CO_BRANCH"
             git checkout -B "$CO_BRANCH" "origin/$CO_BRANCH"
 
-            # Copy exported files (excluding .git)
-            rsync -a --delete --exclude='.git' "$EXPORT_DIR/" ./
+            # Copy exported files, preserving CO-only metadata
+            rsync -a --delete --exclude='.git' --exclude='.codeocean' "$EXPORT_DIR/" ./
 
             # Commit without [sync] to prevent triggering reverse sync
             if ! git diff --quiet || ! git diff --cached --quiet; then
