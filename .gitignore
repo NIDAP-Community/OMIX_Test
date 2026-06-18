@@ -31,6 +31,10 @@ data/
 *.jpg
 *.jpeg
 
+# Documentation images are source artifacts for rendered guides and decks.
+!docs/*.png
+!docs/diagrams/*.png
+
 # Runtime scaffolds intentionally track docs and tiny examples.
 !modules/*/runtime/data/
 !modules/*/runtime/data/README.md
@@ -42,3 +46,6 @@ data/
 # Containers
 *.sif
 *.tar
+
+# Office temp/lock files
+~\$*
