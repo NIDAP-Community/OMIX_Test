@@ -4,7 +4,7 @@ Independent OMIX module for volcano plots.
 
 Starter environment: `r-visualization`
 
-The runnable Code Ocean payload lives in `runtime/`. The module-level files here (`module.yml`, schemas, changelog, and this README) describe the OMIX module boundary in the monorepo; `runtime/README.md` is the capsule-facing user README.
+The runnable Code Ocean payload lives in `runtime/`. For a user-facing overview of the tool (what it does, what data you need, how to interpret the output), see [runtime/README.md](runtime/README.md). The module-level files here (`module.yml`, schemas, changelog, and this README) describe the OMIX module boundary in the monorepo. For developer and maintainer details, see [runtime/code/DEVELOPER.md](runtime/code/DEVELOPER.md).
 
 ## Run This Module
 

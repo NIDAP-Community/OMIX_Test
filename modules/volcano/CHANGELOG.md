@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1
+
+- Add Galaxy tool wrapper (`galaxy/omix_volcano.xml` + `galaxy/main.R`).
+- Cross-reference capsule README and DEVELOPER.md from module README.
+- Rewrite DEVELOPER.md with file-ownership map (Shared / CO Only / HPC Only).
+- Align with shared runtime environment architecture.
+
 ## 0.2.0
 
 - Fill out `inputs.schema.json` with all parameters, types, defaults, and enums.
