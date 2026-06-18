@@ -127,7 +127,7 @@ They also record:
 - data policy
 - sync policy
 
-The legacy module-level `code/run.R` files remain as wrappers that call the nested runtime `run.sh`.
+The legacy module-level `code/run.R` wrappers were removed for modules whose manifest entrypoint now points directly to `runtime/run.sh`.
 
 ## Git Ignore Updates
 

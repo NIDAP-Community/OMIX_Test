@@ -1,0 +1,23 @@
+flowchart LR
+  subgraph MonoRepo["OMIX Monorepo (github.com/NIDAP-Community/OMIX)"]
+    Main["main branch\n(monorepo layout)\ncore/ modules/ docs/\nstarter-environments/"]
+    CoVolcano["co/volcano branch\n(capsule-root layout)\ncode/ environment/\ndata/ results/"]
+    CoHeatmap["co/heatmap branch\n(capsule-root layout)\ncode/ environment/\ndata/ results/"]
+  end
+
+  subgraph Problem["Code Ocean sees..."]
+    CO_Pull["Pulls from main"]
+    CO_Gets["Gets entire monorepo\n(NOT capsule-root layout)"]
+    CO_Fail["X Release fails:\nlayout mismatch"]
+  end
+
+  Main -->|"CO pulls main"| CO_Pull --> CO_Gets --> CO_Fail
+  CoVolcano -.->|"This is what\nCO actually needs"| CO_Pull
+
+  classDef bad fill:#ffe8e8,stroke:#c53030,stroke-width:2px,color:#111827;
+  classDef good fill:#eef8f0,stroke:#2f855a,stroke-width:2px,color:#111827;
+  classDef neutral fill:#f7fafc,stroke:#4a5568,stroke-width:2px,color:#111827;
+
+  class Main,CO_Pull,CO_Gets neutral;
+  class CO_Fail bad;
+  class CoVolcano,CoHeatmap good;
