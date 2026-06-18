@@ -1,0 +1,421 @@
+{
+	"version": 1,
+	"named_parameters": true,
+	"general": {
+		"title": "OMIX Volcano Plot",
+		"instructions": "Generate enhanced volcano plots from differential expression analysis results.\n\n**To test with example data:** Leave DEG Table CSV blank and click Run.\n**To use your own data:** Upload your DEG CSV file below."
+	},
+	"categories": [
+		{
+			"id": "basic",
+			"name": "📊 Basic Settings",
+			"help_text": "Essential parameters for volcano plot generation including input data and significance thresholds."
+		},
+		{
+			"id": "labeling",
+			"name": "🏷️ Gene Labeling",
+			"help_text": "Control which genes are labeled on the plot and how they are selected."
+		},
+		{
+			"id": "visualization",
+			"name": "📐 Plot Layout",
+			"help_text": "Customize plot dimensions, axis labels, and visual elements."
+		},
+		{
+			"id": "colors",
+			"name": "🎨 Color Customization",
+			"help_text": "Set custom colors for each quadrant of the volcano plot."
+		},
+		{
+			"id": "advanced",
+			"name": "⚙️ Advanced Options",
+			"help_text": "Advanced axis capping, limits, and fine-tuning options."
+		}
+	],
+	"parameters": [
+		{
+			"id": "q5D9oxXQisl8Fs6f",
+			"category": "basic",
+			"name": "DEG Table CSV",
+			"param_name": "deg_table",
+			"help_text": "CSV file with differential expression results including gene names, p-values, and log2 fold changes. Leave blank to use example data for demo.",
+			"type": "file",
+			"value_type": "string"
+		},
+		{
+			"id": "y3t0F8znEKbxoH8K",
+			"category": "basic",
+			"name": "P-value Type",
+			"param_name": "pvalue_type",
+			"help_text": "Choose 'adjusted' for FDR-corrected p-values (adjpval) or 'nominal' for uncorrected p-values (pval).",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "nominal",
+			"extra_data": [
+				"adjusted",
+				"nominal"
+			]
+		},
+		{
+			"id": "psGRY6WMg5b6lWTa",
+			"category": "basic",
+			"name": "P-value Threshold",
+			"param_name": "p_value_threshold",
+			"help_text": "Significance threshold for p-values (horizontal line on plot).",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "0.05"
+		},
+		{
+			"id": "vkbwD0dYLw9vtZfs",
+			"category": "basic",
+			"name": "Log2 Fold Change Threshold",
+			"param_name": "log2_fold_change_threshold",
+			"help_text": "Fold change threshold for significance (vertical lines on plot).",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "1.0"
+		},
+		{
+			"id": "sxQXXc31RiQDvLzg",
+			"category": "labeling",
+			"name": "Number of Features to Label",
+			"param_name": "number_of_features_to_label",
+			"help_text": "Number of top genes to label on the plot.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "30"
+		},
+		{
+			"id": "GqlWBujgg1WJSXxC",
+			"category": "labeling",
+			"name": "Choose Feature to Label By",
+			"param_name": "choose_feature_to_label_by",
+			"help_text": "Sort genes by p-value or fold change before selecting top N to label.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "p-value",
+			"extra_data": [
+				"p-value",
+				"fold-change"
+			]
+		},
+		{
+			"id": "hzADutsCj7cYnD9l",
+			"category": "labeling",
+			"name": "Label Only Passing Thresholds",
+			"param_name": "top_genes_labeled_only_if_passing_thresholds",
+			"help_text": "If true, only label genes that pass both p-value and fold-change thresholds.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "true",
+			"extra_data": [
+				"true",
+				"false"
+			]
+		},
+		{
+			"id": "2XINhlUxEmHQpHOu",
+			"category": "labeling",
+			"name": "Custom Gene List",
+			"param_name": "my_feature_list",
+			"help_text": "Comma-separated list of additional genes to label (e.g., STAT1, IRF7, MX1). Leave empty for none.",
+			"type": "text",
+			"value_type": "string"
+		},
+		{
+			"id": "OL6kjYlixuJ6B9jL",
+			"category": "labeling",
+			"name": "Label Only Custom List",
+			"param_name": "label_only_my_feature_list",
+			"help_text": "If true, only genes in Custom Gene List will be labeled.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "false",
+			"extra_data": [
+				"false",
+				"true"
+			]
+		},
+		{
+			"id": "afVZtR8W38HJd3mH",
+			"category": "labeling",
+			"name": "Label Box Padding",
+			"param_name": "label_box_padding",
+			"help_text": "Padding around each label box. Higher values = more space around labels, reducing overlap.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "1"
+		},
+		{
+			"id": "lcoHIkruJqE3bEp7",
+			"category": "labeling",
+			"name": "Label Repulsion Force",
+			"param_name": "label_force",
+			"help_text": "Repulsion force between overlapping labels. Higher values = stronger repulsion (0.5-3 typical range).",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "1"
+		},
+		{
+			"id": "l6hDick0InN9aHJB",
+			"category": "labeling",
+			"name": "Label Max Overlaps",
+			"param_name": "label_max_overlaps",
+			"help_text": "Maximum number of overlapping labels allowed. Use lower values to hide crowded labels.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "999"
+		},
+		{
+			"id": "KVhrrjIsG7nVhQGK",
+			"category": "visualization",
+			"name": "Plot Title",
+			"param_name": "plot_title",
+			"help_text": "Main title for the volcano plot.",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "Volcano Plot"
+		},
+		{
+			"id": "eVB7XJkilJU0AqUb",
+			"category": "visualization",
+			"name": "Plot Subtitle",
+			"param_name": "plot_subtitle",
+			"help_text": "Optional subtitle for the plot. Leave empty to auto-generate from comparison name.",
+			"type": "text",
+			"value_type": "string"
+		},
+		{
+			"id": "qDLzINe1lYPeGevO",
+			"category": "visualization",
+			"name": "Plot Title Size",
+			"param_name": "plot_title_size",
+			"help_text": "Font size for the main plot title.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "16"
+		},
+		{
+			"id": "tMarZjFGUEnQ116g",
+			"category": "visualization",
+			"name": "Axis Title Size",
+			"param_name": "axis_title_size",
+			"help_text": "Font size for X and Y axis titles (e.g., 'log2 Fold Change', '-log10(p-value)').",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "14"
+		},
+		{
+			"id": "X3jxVRgXI8CJ9nqL",
+			"category": "visualization",
+			"name": "Axis Tick Label Size",
+			"param_name": "axis_text_size",
+			"help_text": "Font size for axis tick labels (the numbers on the axes).",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "12"
+		},
+		{
+			"id": "RuaKk9KYSnm7coSf",
+			"category": "visualization",
+			"name": "Label Size",
+			"param_name": "label_size",
+			"help_text": "Font size for gene labels.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "4"
+		},
+		{
+			"id": "Fb8uipKL58cHLAmx",
+			"category": "visualization",
+			"name": "Point Size",
+			"param_name": "point_size",
+			"help_text": "Size of points in the scatter plot.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "2"
+		},
+		{
+			"id": "Klz5xFlo223Mmmt6",
+			"category": "visualization",
+			"name": "Image Width (pixels)",
+			"param_name": "image_width",
+			"help_text": "Width of output image in pixels.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "3000"
+		},
+		{
+			"id": "BOZxWI4ASWlHuEGr",
+			"category": "visualization",
+			"name": "Image Height (pixels)",
+			"param_name": "image_height",
+			"help_text": "Height of output image in pixels.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "3000"
+		},
+		{
+			"id": "0ydcY1B8aiprteyz",
+			"category": "visualization",
+			"name": "Resolution (DPI)",
+			"param_name": "resolution_dpi_",
+			"help_text": "Image resolution in dots per inch.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "300"
+		},
+		{
+			"id": "oUr3o566t1IAhcN6",
+			"category": "colors",
+			"name": "Not Significant Color",
+			"param_name": "color_not_significant",
+			"help_text": "Color for non-significant points (e.g., 'gray', '#808080').",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "gray"
+		},
+		{
+			"id": "jmOvGjvXVjeBXqaf",
+			"category": "colors",
+			"name": "Fold Change Only Color",
+			"param_name": "color_fold_change_only",
+			"help_text": "Color for points with fold change only (e.g., 'orange', '#FFA500').",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "orange"
+		},
+		{
+			"id": "2lCIvX28vAbqo0oT",
+			"category": "colors",
+			"name": "Significant Only Color",
+			"param_name": "color_significant_only",
+			"help_text": "Color for significant points with significance only (e.g., 'green4', '#008B00').",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "green4"
+		},
+		{
+			"id": "FUi8YmrGI1lE1p5B",
+			"category": "colors",
+			"name": "Significant + Fold Change Color",
+			"param_name": "color_significant_and_fold_change",
+			"help_text": "Color for significant points with fold change (e.g., 'red3', '#CD0000').",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "red3"
+		},
+		{
+			"id": "3JTyxk3s3R4ATv8j",
+			"category": "advanced",
+			"name": "Use Custom Axis Labels",
+			"param_name": "use_custom_axis_label",
+			"help_text": "Enable custom axis labels defined below.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "false",
+			"extra_data": [
+				"false",
+				"true"
+			]
+		},
+		{
+			"id": "dYczcX8DM2ulP3be",
+			"category": "advanced",
+			"name": "Custom Significance Label",
+			"param_name": "custom_significance_label",
+			"help_text": "Custom label for significance axis (requires 'Use Custom Axis Labels' enabled).",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "p-value"
+		},
+		{
+			"id": "pRCK2xgJzuzPHZpm",
+			"category": "advanced",
+			"name": "Custom Log Fold Change Label",
+			"param_name": "custom_log_fold_change_label",
+			"help_text": "Custom label for fold change axis (requires 'Use Custom Axis Labels' enabled).",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "log2FC"
+		},
+		{
+			"id": "qMz5zsj0bEJW7uOu",
+			"category": "advanced",
+			"name": "Y-axis Limit",
+			"param_name": "y_limit",
+			"help_text": "Maximum Y-axis value (0 = automatic).",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "0"
+		},
+		{
+			"id": "qZtQ3qFUF2KS2f7G",
+			"category": "advanced",
+			"name": "Use Auto Axis Capping",
+			"param_name": "use_auto_axis_capping",
+			"help_text": "Automatically cap axis limits at specified quantile to reduce outlier impact.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "true",
+			"extra_data": [
+				"true",
+				"false"
+			]
+		},
+		{
+			"id": "UXYrf2Wkyo8Lm8vV",
+			"category": "advanced",
+			"name": "Auto Capping Quantile",
+			"param_name": "auto_axis_capping_quantile",
+			"help_text": "Quantile for auto-capping (0.5-1.0). Higher = less aggressive capping.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "0.9999"
+		},
+		{
+			"id": "rjKTqvTvomXJ3Rym",
+			"category": "advanced",
+			"name": "Symmetric X-axis",
+			"param_name": "auto_axis_capping_symmetric_x",
+			"help_text": "Use symmetric X-axis limits when auto-capping is enabled.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "true",
+			"extra_data": [
+				"true",
+				"false"
+			]
+		},
+		{
+			"id": "PdoJb61KvfDE0D8x",
+			"category": "advanced",
+			"name": "Custom X-axis Limits",
+			"param_name": "custom_x_axis_limits",
+			"help_text": "Custom X-axis range (e.g., '5' for -5 to 5, or '-2,4' for -2 to 4). Leave empty for automatic.",
+			"type": "text",
+			"value_type": "string"
+		},
+		{
+			"id": "EArdbgkC0XAzCeby",
+			"category": "advanced",
+			"name": "X-axis Padding",
+			"param_name": "x_limit_padding",
+			"help_text": "Additional padding for X-axis limits.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "0"
+		},
+		{
+			"id": "QCk54ZRhpm4zUwV9",
+			"category": "advanced",
+			"name": "Y-axis Padding",
+			"param_name": "y_limit_padding",
+			"help_text": "Additional padding for Y-axis limits.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "0"
+		}
+	]
+}
