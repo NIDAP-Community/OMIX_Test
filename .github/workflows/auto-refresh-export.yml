@@ -84,10 +84,7 @@ jobs:
             # Commit without [sync] to prevent triggering reverse sync
             if ! git diff --quiet || ! git diff --cached --quiet; then
               git add -A
-              git commit -m "refresh(${MODULE}): auto-export from main
-
-Triggered by push to main.
-This commit does NOT contain [sync] — no reverse sync will fire."
+              git commit -m "refresh(${MODULE}): auto-export from main (no [sync])"
               git push origin "$CO_BRANCH"
               echo "Pushed update to $CO_BRANCH."
             else
