@@ -76,6 +76,8 @@ jobs:
           MODULE="${{ steps.module.outputs.name }}"
           bash scripts/code_ocean_sync.sh reverse "$MODULE" ../co-worktree --apply
 
+          git add "modules/${MODULE}/runtime"
+
           # Check if there are staged changes
           if git diff --cached --quiet; then
             echo "changes=false" >> "$GITHUB_OUTPUT"

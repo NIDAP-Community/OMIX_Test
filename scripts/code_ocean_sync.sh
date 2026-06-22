@@ -82,8 +82,11 @@ if [[ "${apply}" != "--apply" ]]; then
 fi
 
 common_excludes=(
+  --exclude ".git"
   --exclude ".git/"
+  --exclude ".github"
   --exclude ".github/"
+  --exclude ".codeocean"
   --exclude ".codeocean/"
   --exclude ".DS_Store"
   --exclude ".Rhistory"

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+- Sync Code Ocean runtime metadata name and runtime `.gitignore` output filters.
+
 ## 0.2.1
 
 - Add Galaxy tool wrapper (`galaxy/omix_volcano.xml` + `galaxy/main.R`).
