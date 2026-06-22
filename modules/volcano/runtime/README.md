@@ -50,10 +50,16 @@ Your CSV file should include these three types of columns:
 
 ✨ **P-value Type Selection** - Choose between nominal or adjusted (FDR) p-values  
 📊 **Auto Axis Capping** - Reduces outlier impact for better visualization  
-🎨 **Custom Colors** - Personalize colors for each quadrant  
+🎨 **Custom Colors** - Select from curated color palettes for each quadrant (organized light to dark for easy selection)  
 🏷️ **Smart Gene Labeling** - Automatically labels top significant genes  
 📐 **Flexible Layout** - Adjust fonts, sizes, and dimensions  
 🔧 **Advanced Controls** - Fine-tune thresholds, axis limits, and label spacing
+
+### Default Color Scheme
+- **Non-significant points:** gray
+- **Fold change only:** orange  
+- **Significant only:** green4
+- **Significant + fold change:** red3
 
 ## What Will I Get?
 
