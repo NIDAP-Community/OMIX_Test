@@ -23,13 +23,28 @@ This tool visualizes differential gene expression data as volcano plots, helping
 
 ## What Data Do I Need?
 
-Your CSV file should include:
+Your CSV file should include these three types of columns:
 
-- **Gene names** (e.g., GENE_SYMBOL, ENSEMBL_ID)
-- **P-values** (nominal and/or adjusted)
-- **Log2 fold changes** (e.g., log2FC)
+### 1. Gene/Feature Identifier Column
+**Expected names:** `Gene`, `Feature_ID`, `FeatureID`, `gene`, `gene_id`, or any text column  
+**Example:** STAT1, IRF7, ENSG00000012345
 
-The tool will automatically detect your column names!
+### 2. P-value Columns (one or more comparisons)
+**For nominal p-values, column names should contain:** `pval`, `p_value`, or `pvalue`  
+**Examples:** `Treatment_vs_Control_pval`, `GroupA-GroupB_pval`
+
+**For adjusted p-values, column names should contain:** `adjpval`, `adj`, or `fdr`  
+**Examples:** `Treatment_vs_Control_adjpval`, `GroupA-GroupB_fdr`
+
+### 3. Log2 Fold Change Columns (matching your p-value comparisons)
+**Expected patterns:** `logfc`, `log2fc`, or `log2_fold_change`  
+**Examples:** `Treatment_vs_Control_logFC`, `GroupA-GroupB_log2FC`
+
+### Column Naming Tips
+- Use **consistent comparison names** across p-value and fold change columns
+- The tool automatically detects columns based on these patterns (case-insensitive)
+- If you have multiple comparisons (e.g., A-B, A-C, B-C), include the comparison name in each column
+- Example full column names: `GeneSymbol`, `TreatmentA_vs_Control_pval`, `TreatmentA_vs_Control_adjpval`, `TreatmentA_vs_Control_logFC`
 
 ## Key Features
 
