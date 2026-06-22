@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# OMIX GSVA - Entrypoint for Code Ocean App Panel
+# Forwards named parameters to main.R
+
+cd "$(dirname "$0")"
+Rscript main.R "$@"

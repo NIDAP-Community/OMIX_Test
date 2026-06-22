@@ -1,0 +1,194 @@
+{
+	"version": 1,
+	"named_parameters": true,
+	"general": {
+		"title": "OMIX GSVA",
+		"instructions": "Gene Set Variation Analysis (GSVA) for expression data.\n\n**To test with example data:** Leave file parameters blank and click Run.\n**To use your own data:** Upload normalized expression data, sample metadata, and pathways database files (TSV/CSV/RDS formats supported)."
+	},
+	"categories": [
+		{
+			"id": "input",
+			"name": "📁 Input Data",
+			"help_text": "Upload your expression data, sample metadata, and gene set database"
+		},
+		{
+			"id": "basic",
+			"name": "⚙️ Basic Settings",
+			"help_text": "Core analysis parameters including species and gene set collections"
+		},
+		{
+			"id": "method",
+			"name": "🧬 Method Options",
+			"help_text": "GSVA algorithm and geneset size filtering"
+		},
+		{
+			"id": "output",
+			"name": "📊 Output Settings",
+			"help_text": "Configure output plots and results"
+		}
+	],
+	"parameters": [
+		{
+			"id": "norm_data",
+			"category": "input",
+			"name": "Normalized Expression Data",
+			"param_name": "normalized_data",
+			"help_text": "TSV/CSV/RDS file with genes in rows and samples in columns. Leave blank to use example data.",
+			"type": "file",
+			"value_type": "string"
+		},
+		{
+			"id": "meta_data",
+			"category": "input",
+			"name": "Sample Metadata Table",
+			"param_name": "sample_metadata",
+			"help_text": "TSV/CSV/RDS file with sample annotations. Must include sample names matching expression data columns.",
+			"type": "file",
+			"value_type": "string"
+		},
+		{
+			"id": "path_db",
+			"category": "input",
+			"name": "Pathways Database",
+			"param_name": "pathways_database",
+			"help_text": "TSV/CSV/RDS file with gene set definitions. Leave blank to use MSigDB v2023.2.",
+			"type": "file",
+			"value_type": "string"
+		},
+		{
+			"id": "gene_col",
+			"category": "basic",
+			"name": "Gene Column Name",
+			"param_name": "gene_column",
+			"help_text": "Column name containing gene identifiers in the normalized data.",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "Gene"
+		},
+		{
+			"id": "samp_col",
+			"category": "basic",
+			"name": "Sample Name Column",
+			"param_name": "sample_name_column",
+			"help_text": "Column name containing sample identifiers in the metadata table.",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "Sample"
+		},
+		{
+			"id": "species",
+			"category": "basic",
+			"name": "Data Species",
+			"param_name": "species",
+			"help_text": "Species annotation for genes in your normalized expression data.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "Human",
+			"extra_data": [
+				"Human",
+				"Mouse",
+				"Rat",
+				"Dog",
+				"Chimpanzee",
+				"Macaque",
+				"Rabbit",
+				"Zebrafish",
+				"Drosophila"
+			]
+		},
+		{
+			"id": "db_species",
+			"category": "basic",
+			"name": "Database Species",
+			"param_name": "database_species",
+			"help_text": "Species for gene sets in the pathways database (MSigDB supports Human and Mouse).",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "Human",
+			"extra_data": [
+				"Human",
+				"Mouse"
+			]
+		},
+		{
+			"id": "collections",
+			"category": "basic",
+			"name": "Gene Set Collections",
+			"param_name": "collections_to_include",
+			"help_text": "Comma-separated list of MSigDB collections (e.g., 'H: hallmark gene sets, C2: curated gene sets').",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "H: hallmark gene sets"
+		},
+		{
+			"id": "method_type",
+			"category": "method",
+			"name": "GSVA Method",
+			"param_name": "method",
+			"help_text": "Statistical method for enrichment scoring. GSVA (default) is most commonly used.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "gsva",
+			"extra_data": [
+				"gsva",
+				"ssgsea",
+				"zscore",
+				"plage"
+			]
+		},
+		{
+			"id": "min_size",
+			"category": "method",
+			"name": "Minimum Geneset Size",
+			"param_name": "minimum_geneset_size",
+			"help_text": "Gene sets with fewer genes will be excluded from analysis.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "15"
+		},
+		{
+			"id": "max_size",
+			"category": "method",
+			"name": "Maximum Geneset Size",
+			"param_name": "maximum_geneset_size",
+			"help_text": "Gene sets with more genes will be excluded from analysis.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "1200"
+		},
+		{
+			"id": "update_genes_opt",
+			"category": "method",
+			"name": "Update Gene Symbols",
+			"param_name": "update_genes",
+			"help_text": "Update outdated gene symbols to current nomenclature using l2psupp package.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "true",
+			"extra_data": [
+				"true",
+				"false"
+			]
+		},
+		{
+			"id": "img_width",
+			"category": "output",
+			"name": "Plot Width (inches)",
+			"param_name": "image_width",
+			"help_text": "Width of output heatmap image.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "12"
+		},
+		{
+			"id": "img_height",
+			"category": "output",
+			"name": "Plot Height (inches)",
+			"param_name": "image_height",
+			"help_text": "Height of output heatmap image.",
+			"type": "text",
+			"value_type": "number",
+			"default_value": "10"
+		}
+	]
+}

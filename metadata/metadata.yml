@@ -1,0 +1,15 @@
+metadata_version: 1
+name: OMIX GSVA
+description: Gene Set Variation Analysis (GSVA) for expression data profiling. Perform
+  pathway-level analysis on normalized gene expression data using MSigDB gene sets
+  or custom pathways. Supports multiple species and GSVA methods (GSVA, ssGSEA, z-score,
+  PLAGE).
+tags:
+- GSVA
+- Gene Set Analysis
+- Pathway Analysis
+- Expression Analysis
+- MSigDB
+- Enrichment
+- RNA-seq
+- Bulk RNA-seq
