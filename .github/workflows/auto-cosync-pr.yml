@@ -31,9 +31,8 @@ jobs:
           OPEN_PRS=$(gh pr list \
             --repo "$GITHUB_REPOSITORY" \
             --state open \
-            --head "co-sync/${{ steps.module.outputs.name }}" \
             --json number,headRefName \
-            --jq 'length')
+            --jq '[.[] | select(.headRefName | startswith("co-sync/${{ steps.module.outputs.name }}-"))] | length')
           if [ "$OPEN_PRS" -gt 0 ]; then
             echo "::warning::Another co-sync PR for module '${{ steps.module.outputs.name }}' is already open. Aborting."
             echo "duplicate=true" >> "$GITHUB_OUTPUT"
@@ -51,6 +50,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Configure git identity
+        if: steps.dupcheck.outputs.duplicate == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Ensure mod/<module> branch exists
         if: steps.dupcheck.outputs.duplicate == 'false'
         run: |
@@ -66,7 +71,9 @@ jobs:
           MOD_BRANCH="${{ steps.module.outputs.mod_branch }}"
           MODULE="${{ steps.module.outputs.name }}"
 
-          git checkout "$MOD_BRANCH"
+          git checkout -B "$MOD_BRANCH" "origin/$MOD_BRANCH"
+          git rebase origin/main
+          git push origin "$MOD_BRANCH" --force-with-lease
           git worktree add ../co-worktree "origin/co/$MODULE"
 
       - name: Run reverse sync
