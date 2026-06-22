@@ -271,40 +271,72 @@
 			"category": "colors",
 			"name": "Not Significant Color",
 			"param_name": "color_not_significant",
-			"help_text": "Color for non-significant points (e.g., 'gray', '#808080').",
-			"type": "text",
+			"help_text": "Color for non-significant points.",
+			"type": "list",
 			"value_type": "string",
-			"default_value": "gray"
+			"default_value": "gray",
+			"extra_data": [
+				"gray",
+				"lightgray",
+				"darkgray",
+				"grey50",
+				"dimgray",
+				"slategray"
+			]
 		},
 		{
 			"id": "jmOvGjvXVjeBXqaf",
 			"category": "colors",
 			"name": "Fold Change Only Color",
 			"param_name": "color_fold_change_only",
-			"help_text": "Color for points with fold change only (e.g., 'orange', '#FFA500').",
-			"type": "text",
+			"help_text": "Color for points with fold change only.",
+			"type": "list",
 			"value_type": "string",
-			"default_value": "orange"
+			"default_value": "orange",
+			"extra_data": [
+				"orange",
+				"darkorange",
+				"orange2",
+				"orange3",
+				"gold",
+				"goldenrod"
+			]
 		},
 		{
 			"id": "2lCIvX28vAbqo0oT",
 			"category": "colors",
 			"name": "Significant Only Color",
 			"param_name": "color_significant_only",
-			"help_text": "Color for significant points with significance only (e.g., 'green4', '#008B00').",
-			"type": "text",
+			"help_text": "Color for significant points with significance only.",
+			"type": "list",
 			"value_type": "string",
-			"default_value": "green4"
+			"default_value": "green4",
+			"extra_data": [
+				"green4",
+				"darkgreen",
+				"forestgreen",
+				"green3",
+				"seagreen",
+				"springgreen4"
+			]
 		},
 		{
 			"id": "FUi8YmrGI1lE1p5B",
 			"category": "colors",
 			"name": "Significant + Fold Change Color",
 			"param_name": "color_significant_and_fold_change",
-			"help_text": "Color for significant points with fold change (e.g., 'red3', '#CD0000').",
-			"type": "text",
+			"help_text": "Color for significant points with fold change.",
+			"type": "list",
 			"value_type": "string",
-			"default_value": "red3"
+			"default_value": "red3",
+			"extra_data": [
+				"red3",
+				"red",
+				"red2",
+				"red4",
+				"darkred",
+				"firebrick"
+			]
 		},
 		{
 			"id": "3JTyxk3s3R4ATv8j",
