@@ -1,0 +1,8 @@
+/data/
+*_computation/
+*.png
+*.jpg
+*.pdf
+*.csv
+!/data/example_inputs/
+!/data/README.md
