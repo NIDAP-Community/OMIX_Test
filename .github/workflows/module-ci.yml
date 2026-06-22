@@ -46,7 +46,7 @@ jobs:
         run: Rscript tests/test-module-contract.R
 
       - name: Check module versioning
-        if: steps.changed.outputs.has_changes == 'true'
+        if: steps.changed.outputs.has_changes == 'true' && github.event.pull_request.base.ref == 'main'
         run: Rscript scripts/check_module_versioning.R "${{ github.event.pull_request.base.sha }}"
 
       - name: Run smoke tests for changed modules

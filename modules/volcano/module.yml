@@ -1,6 +1,6 @@
 name: volcano
 display_name: Volcano
-version: 0.2.3
+version: 0.2.4
 module_type: visualization
 starter_environment: r-visualization
 owner: TODO

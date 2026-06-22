@@ -169,20 +169,20 @@ jobs:
               --base "$MOD_BRANCH" \
               --head "$SYNC_BRANCH" \
               --title "sync(${MODULE}): fast-merge reverse sync" \
-              --body "$PR_BODY" \
-              --label "auto-sync,fast-merge"
+              --body "$PR_BODY"
             # Enable auto-merge immediately for fast-merge eligible PRs
             PR_NUMBER=$(gh pr list --head "$SYNC_BRANCH" --json number --jq '.[0].number')
-            gh pr merge "$PR_NUMBER" --auto --squash
+            gh pr merge "$PR_NUMBER" --auto --squash || \
+              echo "::warning::Could not enable auto-merge for PR #${PR_NUMBER}; leaving it open."
           else
             gh pr create \
               --base "$MOD_BRANCH" \
               --head "$SYNC_BRANCH" \
               --title "sync(${MODULE}): reverse sync from Code Ocean" \
-              --body "$PR_BODY" \
-              --label "auto-sync"
+              --body "$PR_BODY"
             PR_NUMBER=$(gh pr list --head "$SYNC_BRANCH" --json number --jq '.[0].number')
-            gh pr merge "$PR_NUMBER" --auto --squash
+            gh pr merge "$PR_NUMBER" --auto --squash || \
+              echo "::warning::Could not enable auto-merge for PR #${PR_NUMBER}; leaving it open."
           fi
 
       - name: Exit cleanly if no changes

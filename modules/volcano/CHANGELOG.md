@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.4
+
+- Sync detailed runtime README column naming requirements from Code Ocean.
+
 ## 0.2.3
 
 - Sync expanded runtime usage documentation from Code Ocean.
