@@ -8,6 +8,9 @@ on:
       - 'modules/*/runtime/**'
       - 'core/**'
       - 'starter-environments/**'
+      - '.github/workflows/auto-cosync-pr.yml'
+      - '.github/workflows/auto-refresh-export.yml'
+      - 'scripts/code_ocean_sync.sh'
 
 permissions:
   contents: write
@@ -34,14 +37,19 @@ jobs:
             MODULES=$(git branch -r --list 'origin/co/*' | sed 's|origin/co/||' | tr -d ' ' | sort -u)
           else
             # Direct module runtime changes
-            DIRECT=$(git diff --name-only HEAD~1 HEAD -- 'modules/*/runtime/' \
+            DIRECT=$(git diff --name-only HEAD~1 HEAD -- 'modules/*/runtime/**' \
               | sed -n 's|^modules/\([^/]*\)/runtime/.*|\1|p' \
               | sort -u)
 
-            # If core/ or starter-environments/ changed, ALL modules with co/ branches need refresh
+            # If shared runtime or sync automation changed, refresh ALL modules with co/ branches
             SHARED_CHANGED=$(git diff --name-only HEAD~1 HEAD -- 'core/' 'starter-environments/' | head -1)
+            SYNC_CHANGED=$(git diff --name-only HEAD~1 HEAD -- \
+              '.github/workflows/auto-cosync-pr.yml' \
+              '.github/workflows/auto-refresh-export.yml' \
+              'scripts/code_ocean_sync.sh' \
+              | head -1)
 
-            if [ -n "$SHARED_CHANGED" ]; then
+            if [ -n "$SHARED_CHANGED" ] || [ -n "$SYNC_CHANGED" ]; then
               ALL_CO=$(git branch -r --list 'origin/co/*' | sed 's|origin/co/||' | tr -d ' ')
               MODULES=$(echo -e "${DIRECT}\n${ALL_CO}" | sort -u | grep -v '^$')
             else
