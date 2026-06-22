@@ -2,7 +2,7 @@ name: "Module CI"
 
 on:
   pull_request:
-    branches: [main, 'mod/**']
+    branches: [main]
     paths:
       - 'modules/**'
       - 'core/**'
