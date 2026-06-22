@@ -1,0 +1,19 @@
+{
+	"version": 1,
+	"base_image": "codeocean/mosuite:v0.3.0.9000_ba73bcc",
+	"options": {
+		"registry_host_arg": true,
+		"git_ask_pass": true,
+		"mount_secrets": true
+	},
+	"installers": {
+		"rcran": {
+			"packages": [
+				{
+					"name": "optparse"
+				}
+			],
+			"use_rcache": true
+		}
+	}
+}

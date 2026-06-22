@@ -119,8 +119,53 @@ run_gsva <- function(
   ## User-Defined Template Parameters ##
   ## -------------------------------- ##
 
+  extract_moo_expression <- function(moo) {
+    # Try common slot names for MOO normalized expression matrix
+    candidates <- c("norm_counts", "normalized_counts", "expression", 
+                    "norm_data", "normalized_data", "counts_norm")
+    
+    for (slot_name in candidates) {
+      if (slot_name %in% slotNames(moo)) {
+        mat <- slot(moo, slot_name)
+        if (!is.null(mat) && (is.matrix(mat) || is.data.frame(mat))) {
+          cat(sprintf("Extracted normalized expression from MOO slot: %s\n", slot_name))
+          return(as.data.frame(mat))
+        }
+      }
+    }
+    
+    # If slots don't work, try list-style access
+    for (slot_name in candidates) {
+      if (!is.null(moo[[slot_name]])) {
+        mat <- moo[[slot_name]]
+        if (is.matrix(mat) || is.data.frame(mat)) {
+          cat(sprintf("Extracted normalized expression from MOO element: %s\n", slot_name))
+          return(as.data.frame(mat))
+        }
+      }
+    }
+    
+    stop("ERROR: Could not extract normalized expression matrix from MOO object.\nTried slots: ", 
+         paste(candidates, collapse = ", "))
+  }
+
   read_input_table <- function(tbl, file_path, delim) {
     if (!is.null(file_path) && nzchar(file_path)) {
+      # Check if file is RDS format
+      if (grepl("\\.rds$", file_path, ignore.case = TRUE)) {
+        obj <- readRDS(file_path)
+        
+        # Check if it's a MOO object (S7 or S4 with typical MOO class names)
+        obj_class <- class(obj)[1]
+        if (grepl("moo|mo_object|multi_omics", obj_class, ignore.case = TRUE)) {
+          cat(sprintf("Detected MOO object (class: %s)\n", obj_class))
+          return(extract_moo_expression(obj))
+        }
+        
+        # Otherwise return as-is (should be a data frame)
+        return(obj)
+      }
+      # Otherwise read as delimited text file
       return(utils::read.delim(
         file_path,
         sep = delim,
