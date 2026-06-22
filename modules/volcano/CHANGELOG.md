@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3
+
+- Sync expanded runtime usage documentation from Code Ocean.
+
 ## 0.2.2
 
 - Sync Code Ocean runtime metadata name and runtime `.gitignore` output filters.

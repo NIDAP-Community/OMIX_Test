@@ -1,18 +1,48 @@
 # Usage
 
+## Overview
+
+This document describes how to run the **OMIX Volcano Plot** capsule in different environments:
+
+- **Code Ocean Platform (GUI or API)**: The primary execution environment where users run this capsule through the App Panel interface or programmatically via the API. This is the recommended way for most users.
+- **Local Development/Testing**: Running the capsule code locally on your machine for testing and development.
+- **HPC/Container Systems**: Running the capsule as a containerized workflow on high-performance computing clusters using Singularity/Apptainer.
+
+The capsule's entrypoint is `/code/run` (or `./run.sh`), which accepts command-line parameters, processes differential expression data, and generates volcano plot images in `/results`.
+
+---
+
 ## Code Ocean
 
-Mount production inputs as Code Ocean data assets and run:
+**Where**: Code Ocean platform (https://poc-nci.codeocean.io or your deployment URL)  
+**Who**: End users running analysis through the web interface or API  
+**How**: Via the App Panel GUI (click "Reproducible Run" button) or programmatically via Code Ocean API
+
+### GUI Execution (Recommended)
+
+1. Open the capsule in Code Ocean
+2. Click **"Reproducible Run"** 
+3. Configure parameters in the App Panel (DEG table, thresholds, colors, etc.)
+4. Click **Run** to execute
+5. View results in the **Timeline** tab when complete
+
+### Command-Line (Advanced)
+
+If running directly via CLI or API, the underlying command executed is:
 
 ```bash
 ./run.sh --deg_table /data/deg_table.csv
 ```
 
-Outputs are written to `/results`.
-
-Code Ocean users typically launch this through the platform GUI; this command is the underlying runtime entrypoint.
+---
 
 ## Local Dry Run
+
+**Where**: Your local machine or development workstation  
+**Who**: Developers testing changes before committing  
+**How**: Clone the capsule repository and run test scripts locally
+
+### Quick Test
 
 ```bash
 ./tests/test_run_small.sh
@@ -34,7 +64,13 @@ To run the example input directly:
   --resolution_dpi_ 150
 ```
 
+---
+
 ## HPC Container Run
+
+**Where**: High-performance computing (HPC) clusters or container orchestration systems  
+**Who**: Advanced users running batch analyses outside Code Ocean  
+**How**: Execute the capsule via Singularity/Apptainer container with mounted data
 
 Use a module-specific Singularity/Apptainer image, or another image that contains the packages declared by `environment/`. Bind the runtime folder into the container and run the same entrypoint:
 
