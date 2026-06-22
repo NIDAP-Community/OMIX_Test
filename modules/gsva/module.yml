@@ -1,4 +1,4 @@
-name: pathway_gsva
+name: gsva
 display_name: GSVA
 version: 0.1.0
 module_type: pathway
@@ -12,7 +12,7 @@ runtime_root: runtime
 source_template: GSVA_v1.R
 template_version: 1
 data_policy: External execution platforms provide production inputs; repository stores docs and tiny examples only.
-sync_policy: Bidirectional sync is limited to modules/pathway_gsva/runtime via branch and PR.
+sync_policy: Bidirectional sync is limited to modules/gsva/runtime via branch and PR.
 deployment:
-  image: ghcr.io/nidap-community/omix-pathway-gsva:latest
+  image: ghcr.io/nidap-community/omix-gsva:latest
   base_image: ghcr.io/nidap-community/omix-r-pathway:latest
