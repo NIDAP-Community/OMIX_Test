@@ -40,7 +40,7 @@ Current starter modules:
 - `venn_diagram`
 - `tsne_umap`
 - `stats_limma`
-- `pathway_gsva`
+- `gsva`
 - `pathway_gsea`
 - `pathway_l2p_single`
 - `pathway_l2p_multi`
@@ -48,6 +48,7 @@ Current starter modules:
 The first platform-ready runtime examples are:
 
 - `modules/volcano/runtime/`
+- `modules/gsva/runtime/`
 - `modules/pathway_l2p_single/runtime/`
 - `modules/pathway_l2p_multi/runtime/`
 
@@ -58,6 +59,7 @@ All other modules are placeholders until these first examples are validated in C
 Platform-ready modules keep their runnable payload under `runtime/`. OMIX is intended to support multiple execution contexts, including Code Ocean GUI capsules, interactive R work, shell execution, and HPC containers. For code-oriented runs, start from the module README:
 
 - `modules/volcano/README.md`
+- `modules/gsva/README.md`
 - `modules/pathway_l2p_single/README.md`
 - `modules/pathway_l2p_multi/README.md`
 
