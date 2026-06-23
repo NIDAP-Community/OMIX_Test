@@ -47,6 +47,9 @@ data/
 *.sif
 *.tar
 
+# Allow baked-in data files in starter environments
+!starter-environments/r-pathway/msigdb_v2023_2.rds
+
 # Office files (presentations, documents, temp/lock files)
 *.pptx
 *.docx
