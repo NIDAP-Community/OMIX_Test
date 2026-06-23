@@ -18,6 +18,7 @@ singularity exec \
     --sample_metadata /data/sample_metadata.tsv \
     --species Human \
     --collections_to_include "H: hallmark gene sets"
+```
 
 ## What's included
 R 4.4.3 with GSVA, fgsea, l2p, l2psupp, optparse, dplyr, tidyr, ggplot2, and more
