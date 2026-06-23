@@ -1,0 +1,29 @@
+%%{init: {"theme": "base", "themeVariables": {"fontSize": "24px", "fontFamily": "Arial", "primaryTextColor": "#111827"}}}%%
+flowchart TD
+  %% Readable summary of .github/workflows/auto-refresh-export.yml.
+  %% Detailed behavior is documented in docs/ci-workflows.md.
+
+  A["1. main changes<br/>or workflow is run manually"]
+  B{"2. What needs refreshing?"}
+  C["Matching co/{module}<br/>for module runtime changes"]
+  D["All co/* module branches<br/>for shared runtime or sync automation changes"]
+  E["3. auto-refresh-export.yml runs"]
+  F["4. Outbound sync exports<br/>modules/{module}/runtime<br/>to capsule-root layout"]
+  G["5. Update co/{module}<br/>Preserve .codeocean and .git"]
+  H["6. Commit without [sync]<br/>No reverse-sync loop"]
+  I["7. Code Ocean branch<br/>matches main runtime state"]
+
+  A --> B
+  B -- "module runtime" --> C --> E
+  B -- "shared/runtime automation" --> D --> E
+  E --> F --> G --> H --> I
+
+  classDef main fill:#f3edff,stroke:#6b46c1,stroke-width:3px,color:#111827;
+  classDef decision fill:#fff7e6,stroke:#c77900,stroke-width:3px,color:#111827;
+  classDef action fill:#e8f3ff,stroke:#2b6cb0,stroke-width:3px,color:#111827;
+  classDef co fill:#eef8f0,stroke:#2f855a,stroke-width:3px,color:#111827;
+
+  class A main;
+  class B decision;
+  class C,D,E,F action;
+  class G,H,I co;

@@ -1,0 +1,34 @@
+%%{init: {"theme": "base", "themeVariables": {"fontSize": "24px", "fontFamily": "Arial", "primaryTextColor": "#111827"}}}%%
+flowchart TD
+  %% Readable summary of .github/workflows/block-duplicate-cosync-pr.yml.
+  %% Detailed behavior is documented in docs/ci-workflows.md.
+
+  A["1. PR opened or reopened<br/>target branch: main"]
+  B{"2. Is the PR branch<br/>co-sync/* ?"}
+  C["Skip workflow<br/>Normal PRs are not checked"]
+  D["3. Extract module name<br/>co-sync/{module}-timestamp<br/>becomes {module}"]
+  E{"4. Is another open<br/>co-sync/{module}-* PR<br/>already present?"}
+  F["5. Block this PR<br/>Comment with warning<br/>Fail the check"]
+  G["5. Allow this PR<br/>No same-module duplicate found"]
+  H["Different modules can sync<br/>at the same time"]
+
+  A --> B
+  B -- "No" --> C
+  B -- "Yes" --> D --> E
+  E -- "Yes" --> F
+  E -- "No" --> G
+  G --> H
+
+  classDef pr fill:#e6fffa,stroke:#319795,stroke-width:3px,color:#111827;
+  classDef decision fill:#fff7e6,stroke:#c77900,stroke-width:3px,color:#111827;
+  classDef action fill:#e8f3ff,stroke:#2b6cb0,stroke-width:3px,color:#111827;
+  classDef block fill:#ffe8e8,stroke:#c53030,stroke-width:3px,color:#111827;
+  classDef stop fill:#f0f0f0,stroke:#9ca3af,stroke-width:2px,stroke-dasharray:5 5,color:#4b5563;
+  classDef note fill:#f7fafc,stroke:#4a5568,stroke-width:2px,color:#111827;
+
+  class A pr;
+  class B,E decision;
+  class D,G action;
+  class F block;
+  class C stop;
+  class H note;

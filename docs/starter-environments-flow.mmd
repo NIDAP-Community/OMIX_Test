@@ -1,0 +1,31 @@
+%%{init: {"theme": "base", "themeVariables": {"fontSize": "24px", "fontFamily": "Arial", "primaryTextColor": "#111827"}}}%%
+flowchart TD
+  %% Readable summary of .github/workflows/starter-environments.yml.
+  %% Detailed behavior is documented in docs/ci-workflows.md.
+
+  A["1. Change touches<br/>starter-environments/**<br/>or this workflow file"]
+  B{"2. Is this a PR<br/>or a push to main?"}
+  C["3A. PR path<br/>Build image matrix<br/>Do not push"]
+  D["3B. main push path<br/>Log in to GHCR"]
+  E["4. Build image matrix<br/>r-base<br/>r-visualization<br/>r-pathway<br/>r-singlecell"]
+  F["5. Push images to GHCR<br/>latest tag<br/>git SHA tag"]
+  G["6. Starter images available<br/>for module runtimes"]
+  I["PR check result<br/>build must pass<br/>before merge"]
+  H["Related effect<br/>A main push touching starter-environments/**<br/>also triggers workflow 2<br/>to refresh co/* branches"]
+
+  A --> B
+  B -- "PR" --> C --> I
+  B -- "push to main" --> D --> E --> F --> G
+  D --> H
+
+  classDef trigger fill:#e6fffa,stroke:#319795,stroke-width:3px,color:#111827;
+  classDef decision fill:#fff7e6,stroke:#c77900,stroke-width:3px,color:#111827;
+  classDef action fill:#e8f3ff,stroke:#2b6cb0,stroke-width:3px,color:#111827;
+  classDef publish fill:#f3edff,stroke:#6b46c1,stroke-width:3px,color:#111827;
+  classDef note fill:#f7fafc,stroke:#4a5568,stroke-width:2px,color:#111827;
+
+  class A trigger;
+  class B decision;
+  class C,D,E action;
+  class F,G publish;
+  class H note;

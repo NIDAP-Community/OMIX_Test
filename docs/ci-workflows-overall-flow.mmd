@@ -1,0 +1,48 @@
+%%{init: {"theme": "base", "themeVariables": {"fontSize": "22px", "fontFamily": "Arial", "primaryTextColor": "#111827"}}}%%
+flowchart TD
+  %% Overall view of how the OMIX GitHub Actions workflows relate.
+
+  CO["Code Ocean work<br/>co/{module}"]
+  NoSync["CO commit without [sync]<br/>stays on co/{module}<br/>no PR created"]
+  Sync["[sync] commit"]
+  W1["1. auto-cosync-pr.yml<br/>reverse-sync allowed runtime files"]
+  PR["co-sync/{module}-timestamp<br/>PR to main"]
+  W3["3. block-duplicate-cosync-pr.yml<br/>one open sync PR per module"]
+  W4["4. module-ci.yml<br/>contract, versioning,<br/>smoke tests"]
+
+  LocalPR["Local or GitHub PR<br/>to main"]
+  StarterChange["starter-environments change"]
+  W5["5. starter-environments.yml<br/>build shared Docker images"]
+  GHCR["GHCR starter images<br/>latest and git SHA tags"]
+
+  subgraph Refresh["Main-to-Code Ocean refresh path"]
+    direction LR
+    Main["main<br/>OMIX monorepo<br/>source of truth"]
+    W2["2. auto-refresh-export.yml<br/>after relevant main changes"]
+    CORefreshed["GitHub co/{module}<br/>branch refreshed<br/>CO may still need pull/sync"]
+    Main --> W2 --> CORefreshed
+  end
+
+  CO --> Sync --> W1 --> PR --> W3 --> W4 --> Main
+  CO -.-> NoSync
+
+  LocalPR --> W4
+  StarterChange --> W5 --> GHCR
+  StarterChange -. "when merged" .-> Main
+  GHCR -. "published from main pushes" .-> Main
+
+  CORefreshed -. "available to Code Ocean" .-> CO
+
+  classDef co fill:#eef8f0,stroke:#2f855a,stroke-width:3px,color:#111827;
+  classDef pr fill:#e6fffa,stroke:#319795,stroke-width:3px,color:#111827;
+  classDef workflow fill:#e8f3ff,stroke:#2b6cb0,stroke-width:3px,color:#111827;
+  classDef main fill:#f3edff,stroke:#6b46c1,stroke-width:3px,color:#111827;
+  classDef env fill:#fff7e6,stroke:#c77900,stroke-width:3px,color:#111827;
+  classDef note fill:#f7fafc,stroke:#4a5568,stroke-width:2px,color:#111827;
+
+  class CO,CORefreshed co;
+  class Sync,PR,LocalPR pr;
+  class W1,W2,W3,W4,W5 workflow;
+  class Main main;
+  class StarterChange,GHCR env;
+  class NoSync note;

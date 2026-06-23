@@ -92,6 +92,7 @@ Each runtime bundle can be layout-projected into a standalone Code Ocean root. T
 See:
 
 - `docs/code-ocean-sync.md` for the step-by-step sync workflow
+- `docs/ci-workflows.md` for the current GitHub Actions workflow reference
 - `docs/github-sync-flow.mmd` for the high-level local-machine vs Code Ocean GitHub sync flow
 - `docs/code-ocean-sync-flow.mmd` for the Mermaid/Lucidchart diagram
 

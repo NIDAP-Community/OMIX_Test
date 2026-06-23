@@ -1,5 +1,7 @@
 # Code Ocean Capsule Sync
 
+> Current implementation note: this page describes the intended `mod/<module>` staging-branch design. The checked-in GitHub Actions workflows currently open `co-sync/*` reverse-sync PRs directly to `main`, and no `promote-mod-to-main.yml` workflow is currently present. See `docs/ci-workflows.md` for the workflow-by-workflow current state.
+
 OMIX keeps the monorepo as the source of truth while allowing each Code Ocean capsule to be edited in isolation. A per-module integration branch (`mod/<module>`) decouples fast Code Ocean iteration from the protected `main` branch.
 
 ## Architecture Overview

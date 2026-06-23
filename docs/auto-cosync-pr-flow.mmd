@@ -1,0 +1,32 @@
+%%{init: {"theme": "base", "themeVariables": {"fontSize": "24px", "fontFamily": "Arial", "primaryTextColor": "#111827"}}}%%
+flowchart TD
+  %% Readable summary of .github/workflows/auto-cosync-pr.yml.
+  %% Detailed behavior is documented in docs/ci-workflows.md.
+
+  A["1. co/{module}<br/>Persistent Code Ocean branch<br/>CO commits can accumulate here"]
+  B{"2. Does the pushed commit<br/>include [sync]?"}
+  C["No PR created<br/>Commit stays on co/{module}"]
+  D["3. auto-cosync-pr.yml runs"]
+  E["4. Reverse sync allowed files<br/>into modules/{module}/runtime/"]
+  F["5. Guardrails<br/>One open sync PR per module<br/>Paths must stay in runtime<br/>.codeocean is not copied"]
+  G["6. Create co-sync/{module}-timestamp<br/>Temporary PR branch"]
+  H["7. Open PR to main<br/>Module CI and PR checks run"]
+  I["8. Merge to main<br/>Version and CHANGELOG updates<br/>may still be needed"]
+
+  A --> B
+  B -- "No" --> C
+  B -- "Yes" --> D --> E --> F --> G --> H --> I
+
+  classDef co fill:#eef8f0,stroke:#2f855a,stroke-width:3px,color:#111827;
+  classDef decision fill:#fff7e6,stroke:#c77900,stroke-width:3px,color:#111827;
+  classDef action fill:#e8f3ff,stroke:#2b6cb0,stroke-width:3px,color:#111827;
+  classDef pr fill:#e6fffa,stroke:#319795,stroke-width:3px,color:#111827;
+  classDef main fill:#f3edff,stroke:#6b46c1,stroke-width:3px,color:#111827;
+  classDef stop fill:#f0f0f0,stroke:#9ca3af,stroke-width:2px,stroke-dasharray:5 5,color:#4b5563;
+
+  class A co;
+  class B decision;
+  class D,E,F action;
+  class G,H pr;
+  class I main;
+  class C stop;

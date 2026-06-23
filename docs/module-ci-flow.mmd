@@ -1,0 +1,31 @@
+%%{init: {"theme": "base", "themeVariables": {"fontSize": "24px", "fontFamily": "Arial", "primaryTextColor": "#111827"}}}%%
+flowchart TD
+  %% Readable summary of .github/workflows/module-ci.yml.
+  %% Detailed behavior is documented in docs/ci-workflows.md.
+
+  A["1. PR to main<br/>touches modules, core,<br/>tests, or versioning script"]
+  B["2. Checkout repo<br/>full history for diff checks"]
+  C["3. Detect changed modules<br/>from modules/** paths"]
+  D["4. Set up R"]
+  E["5. Run module contract validation<br/>tests/test-module-contract.R"]
+  F{"6. Any changed modules?"}
+  G["No module changes<br/>contract validation is the main check"]
+  H["7. Check module versioning<br/>module.yml version and CHANGELOG<br/>for release-impacting changes"]
+  I["8. Run smoke tests<br/>for changed modules when<br/>runtime/tests/test_run_small.sh exists"]
+  J["9. PR check result<br/>must pass before merge to main"]
+
+  A --> B --> C --> D --> E --> F
+  F -- "No" --> G --> J
+  F -- "Yes" --> H --> I --> J
+
+  classDef pr fill:#e6fffa,stroke:#319795,stroke-width:3px,color:#111827;
+  classDef action fill:#e8f3ff,stroke:#2b6cb0,stroke-width:3px,color:#111827;
+  classDef decision fill:#fff7e6,stroke:#c77900,stroke-width:3px,color:#111827;
+  classDef stop fill:#f0f0f0,stroke:#9ca3af,stroke-width:2px,stroke-dasharray:5 5,color:#4b5563;
+  classDef result fill:#f3edff,stroke:#6b46c1,stroke-width:3px,color:#111827;
+
+  class A pr;
+  class B,C,D,E,H,I action;
+  class F decision;
+  class G stop;
+  class J result;
