@@ -29,7 +29,52 @@ docker pull ghcr.io/nidap-community/omix-r-pathway:latest
 
 ## Quick start — run GSVA
 
-The GSVA module is at `modules/gsva/runtime/`. Mount your data and run:
+The GSVA module is at `modules/gsva/runtime/`.
+
+### Singularity / Apptainer (HPC)
+
+Pull the image once and convert to a SIF file:
+
+```bash
+singularity pull omix-r-pathway.sif docker://ghcr.io/nidap-community/omix-r-pathway:latest
+```
+
+Run GSVA, binding your data and results directories:
+
+```bash
+singularity exec \
+  --bind /path/to/your/data:/data \
+  --bind /path/to/output:/results \
+  omix-r-pathway.sif \
+  Rscript /workspace/code/main.R \
+    --normalized_data /data/normalized_data.tsv \
+    --sample_metadata /data/sample_metadata.tsv \
+    --species Mouse \
+    --collections_to_include "MH: orthology-mapped hallmark gene sets"
+```
+
+For Slurm jobs:
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=gsva
+#SBATCH --mem=8G
+#SBATCH --cpus-per-task=4
+
+module load singularity   # or: module load apptainer
+
+singularity exec \
+  --bind $PWD/data:/data \
+  --bind $PWD/results:/results \
+  omix-r-pathway.sif \
+  Rscript /workspace/code/main.R \
+    --normalized_data /data/normalized_data.tsv \
+    --sample_metadata /data/sample_metadata.tsv \
+    --species Human \
+    --collections_to_include "H: hallmark gene sets"
+```
+
+### Docker
 
 ```bash
 docker run --rm \
@@ -42,6 +87,8 @@ docker run --rm \
     --species Mouse \
     --collections_to_include "MH: orthology-mapped hallmark gene sets"
 ```
+
+### Notes
 
 The built-in MSigDB is used automatically when `--pathways_database` is
 omitted. Supply your own file to override:
