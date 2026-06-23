@@ -26,7 +26,7 @@ runtime_root <- normalizePath(file.path(get_script_dir(), ".."), mustWork = TRUE
 option_list <- list(
   make_option("--normalized_data", type = "character", help = "Path to normalized expression data (TSV/CSV)"),
   make_option("--sample_metadata", type = "character", help = "Path to sample metadata table (TSV/CSV)"),
-  make_option("--pathways_database", type = "character", help = "Path to pathways database (TSV/CSV)"),
+  make_option("--pathways_database", type = "character", help = "Path to pathways database (TSV/CSV). Optional when built-in MSigDB is available."),
   make_option("--gene_column", type = "character", default = "Gene", help = "Gene name column in normalized data"),
   make_option("--sample_name_column", type = "character", default = "Sample", help = "Column containing sample name in metadata"),
   make_option("--samples_to_include", type = "character", default = "", help = "Comma-separated sample columns to include"),
@@ -46,7 +46,7 @@ option_list <- list(
 )
 
 parser <- OptionParser(
-  usage = "Usage: %prog --normalized_data PATH --sample_metadata PATH --pathways_database PATH [options]",
+  usage = "Usage: %prog --normalized_data PATH --sample_metadata PATH [options]\n\nThe built-in MSigDB v2023.2 database is used by default. Override with --pathways_database.",
   option_list = option_list,
   description = "Run Gene Set Variation Analysis (GSVA) on expression data"
 )
@@ -76,14 +76,26 @@ meta_path <- resolve_path(opt$sample_metadata, c(
   "/data/sample_metadata.tsv",
   file.path(runtime_root, "data", "example_inputs", "sample_metadata.tsv")
 ))
+# Pathways database: check user-supplied file, then built-in MSigDB RDS
+builtin_msigdb <- "/data/msigdb_v2023_2.rds"
 pathways_path <- resolve_path(opt$pathways_database, c(
   "/data/pathways_database.tsv",
   file.path(runtime_root, "data", "example_inputs", "pathways_database.tsv")
 ))
 
+pathways_df <- NULL
+if (!is.null(pathways_path)) {
+  # User provided a file — it will be read by run_gsva via pathways_database_file
+} else if (file.exists(builtin_msigdb)) {
+  message("Using built-in MSigDB v2023.2 database")
+  pathways_df <- readRDS(builtin_msigdb)
+  pathways_path <- NULL
+} else {
+  stop("ERROR: --pathways_database is required (no built-in MSigDB found).", call. = FALSE)
+}
+
 if (is.null(norm_path)) stop("ERROR: --normalized_data is required.", call. = FALSE)
 if (is.null(meta_path)) stop("ERROR: --sample_metadata is required.", call. = FALSE)
-if (is.null(pathways_path)) stop("ERROR: --pathways_database is required.", call. = FALSE)
 
 # Results directory
 results_dir <- if (dir.exists("/results")) "/results" else file.path(runtime_root, "results")
@@ -116,7 +128,7 @@ if (is.null(samples_to_include)) {
 result <- run_gsva(
   normalized_data = NULL,
   sample_metadata_table = NULL,
-  pathways_database = NULL,
+  pathways_database = pathways_df,
   gene_column = opt$gene_column,
   sample_name_column = opt$sample_name_column,
   samples_to_include = samples_to_include,
