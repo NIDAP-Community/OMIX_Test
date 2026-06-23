@@ -1,0 +1,23 @@
+{
+  "run_label": "gsva_example",
+  "inputs": {
+    "normalized_data_file": "data/example_inputs/normalized_data.tsv",
+    "sample_metadata_file": "data/example_inputs/sample_metadata.tsv",
+    "pathways_database_file": "data/example_inputs/pathways_database.tsv"
+  },
+  "function_args": {
+    "function_name": "run_gsva",
+    "gene_column": "Gene",
+    "sample_name_column": "Sample",
+    "samples_to_include": [],
+    "species": "Human",
+    "database_species": "Human",
+    "collections_to_include": ["H: hallmark gene sets"],
+    "custom_pathways_database": false,
+    "custom_species": "Mouse",
+    "method": "gsva",
+    "minimum_geneset_size": 15,
+    "maximum_geneset_size": 1200,
+    "update_genes": true
+  }
+}
