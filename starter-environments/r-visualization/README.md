@@ -18,3 +18,6 @@ Intended image:
 ghcr.io/nidap-community/omix-r-visualization:latest
 ```
 
+The image also includes the plotting and statistical dependencies required by
+the preserved CCBR gene-boxplot implementation: `ggbeeswarm`, `broom`,
+`multcomp`, `multcompView`, and `RColorBrewer`.

@@ -9,6 +9,11 @@ RUN R -q -e "install.packages(c( \
   'tidyr', \
   'ggplot2', \
   'ggrepel', \
+  'ggbeeswarm', \
+  'broom', \
+  'multcomp', \
+  'multcompView', \
+  'RColorBrewer', \
   'stringr', \
   'optparse', \
   'patchwork', \
@@ -17,4 +22,3 @@ RUN R -q -e "install.packages(c( \
 ), repos = 'https://cloud.r-project.org')"
 
 WORKDIR /workspace
-
